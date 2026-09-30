@@ -86,9 +86,12 @@ const personSchema = {
 
     <script>
       import { initBlurUp } from '../scripts/blurup';
+      import { initMotion } from '../scripts/motion';
       initBlurUp();
+      initMotion();
       // ClientRouter replaces the DOM on navigation, so rebind afterwards.
       document.addEventListener('astro:page-load', initBlurUp);
+      document.addEventListener('astro:page-load', initMotion);
     </script>
 
     <!-- Cloudflare Web Analytics: free, cookie-less, works on any host -->

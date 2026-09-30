@@ -335,10 +335,10 @@
     .reveal,
     .reveal-group > * {
       opacity: 0;
-      transform: translateY(1.75rem);
+      transform: translateY(3.25rem) scale(0.985);
       transition:
-        opacity 0.75s var(--ease-enter),
-        transform 0.75s var(--ease-enter);
+        opacity 0.7s var(--ease-enter),
+        transform 0.7s var(--ease-enter);
       transition-delay: calc(var(--reveal-i, 0) * 80ms);
     }
 
@@ -361,7 +361,7 @@
   @keyframes reveal-up {
     from {
       opacity: 0;
-      transform: translateY(1.75rem);
+      transform: translateY(3.25rem) scale(0.985);
     }
     to {
       opacity: 1;

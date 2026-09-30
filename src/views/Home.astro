@@ -24,13 +24,3 @@ const { locale } = Astro.props;
   <OtherProjects locale={locale} />
   <Contact locale={locale} />
 </Page>
-
-  <script>
-    import { initMotion } from '../scripts/motion';
-
-    // Re-run on every ClientRouter navigation: the DOM these bind to is replaced
-    // on every page swap, so a one-shot call on first load would leave the
-    // effects dead on the second page.
-    initMotion();
-    document.addEventListener('astro:page-load', initMotion);
-  </script>
