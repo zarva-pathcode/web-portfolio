@@ -19,11 +19,20 @@ const words = tr['hero.headline'].split(' ');
   class="relative flex min-h-[94vh] flex-col justify-between overflow-hidden bg-canvas pt-28 pb-12"
 >
   <!--
-    The backdrop keeps its full colour at rest. Two nested frames, because the
-    entrance and the parallax both animate `transform` and would otherwise
-    overwrite each other: .hero-intro is the time-based settle on load (inner),
-    .hero-parallax is the scroll-driven drift on the outer one. motion.ts mirrors
-    the same offset in browsers that lack `animation-timeline`.
+    The backdrop keeps its full colour at rest.
+
+    Two nested frames, because the entrance and the parallax both animate
+    `transform` and would otherwise overwrite each other: .hero-intro is the
+    time-based settle on load (inner), .hero-parallax is the scroll-driven drift
+    on the outer one. motion.ts mirrors the same offset in browsers that lack
+    `animation-timeline`.
+
+    The entrance is an opacity fade on purpose. It used to be `scale(1.08) -> 1`,
+    which looks better in isolation but scales the whole frame, so its left edge
+    travels ~11px across the first 400ms. Against this portrait that reads as a
+    bright vertical line sliding in from the right on every page load. Fading
+    cannot produce an edge, so the artefact is gone and the entrance still reads
+    as a settle.
   -->
   <div
     class="hero-parallax pointer-events-none absolute inset-0 z-0 flex select-none items-center justify-end overflow-hidden"
@@ -38,9 +47,14 @@ const words = tr['hero.headline'].split(' ');
         sizes="(min-width: 1024px) 60vw, 100vw"
         loading="eager"
         fetchpriority="high"
-        class="h-full w-full scale-105 object-cover object-center will-change-transform"
+        class="h-full w-full object-cover object-center will-change-opacity"
       />
-      <div class="absolute inset-0 bg-linear-to-r from-black via-black/70 to-transparent"></div>
+      {/*
+        Left-to-right, dark first: the headline sits over the left third, so that
+        side has to stay black enough for contrast, and the image is allowed to
+        clear on the right.
+      */}
+      <div class="absolute inset-0 bg-linear-to-r from-black via-black/80 to-black/30"></div>
       <div class="absolute inset-0 bg-linear-to-t from-black via-transparent to-black/70"></div>
     </div>
   </div>

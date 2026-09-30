@@ -383,17 +383,17 @@
   }
 
   /*
-   * Hero entrance. The backdrop settles from a slight over-scale while fading in,
-   * which reads as a camera pulling back rather than a plain fade.
+   * Hero entrance. An opacity fade, not a scale: the frame is right-aligned
+   * against the viewport edge, so scaling it moves its left border sideways and
+   * that border reads as a sliding line across the portrait during load. A fade
+   * has no edge to move.
    */
   @keyframes hero-intro {
     from {
       opacity: 0;
-      transform: scale(1.08);
     }
     to {
       opacity: 1;
-      transform: scale(1);
     }
   }
 
@@ -404,29 +404,74 @@
   /* --- Pointer-driven depth ------------------------------------------------ */
 
   /*
-   * 3D tilt on the featured-project rows. `--tilt-x` / `--tilt-y` are written by
-   * motion.ts from pointer position; the reset on pointer-leave is a plain
-   * transition on the custom properties, so the card eases back on its own.
+   * Featured-project panel breakout.
+   *
+   * The figure scales past its own frame on hover so the screenshot reads as
+   * escaping the card rather than sitting inside it. Applied to the <figure>
+   * itself rather than the image, so the chrome bar and the border scale with
+   * the content and the composition stays intact.
+   *
+   * `z-index` is only set on hover, which is what lifts the panel above the next
+   * row once the scale pushes it out of its grid cell. The wrapper column is left
+   * `overflow: visible` so nothing clips it.
    */
-  .tilt {
-    transform: perspective(1400px) rotateX(var(--tilt-x, 0deg))
-      rotateY(var(--tilt-y, 0deg)) translateZ(0);
-    transform-style: preserve-3d;
+  .panel {
+    transform: scale(1);
+    /*
+     * Pinned to the top left on purpose. The panel column already sits against
+     * the right edge of the viewport, so the default centre origin would scale it
+     * outward past that edge and clip the frame. Growing right and down from the
+     * top left keeps the whole panel on screen.
+     */
+    transform-origin: top left;
     transition:
-      transform 0.4s var(--ease-hover),
+      transform 0.55s var(--ease-hover),
       border-color 0.4s var(--ease-hover);
   }
 
-  .tilt[data-active] {
-    transition: border-color 0.4s var(--ease-hover);
+  @media (min-width: 1024px) {
+    .group:hover .panel,
+    .group:focus-within .panel {
+      transform: scale(1.04) translateY(-0.375rem);
+      z-index: 2;
+    }
   }
 
-  .tilt[data-active][data-hot] {
-    border-color: rgba(56, 189, 248, 0.42);
+  /*
+   * The screenshot takes the same velocity as the section drift, but far more
+   * gently and in the opposite direction, so it reads as a small parallax
+   * against the column rather than as part of the page movement.
+   */
+  .panel-img {
+    transform: scale(1) translate3d(0, calc(var(--scroll-velocity, 0) * 0.25rem), 0);
+    transition: transform 0.7s var(--ease-hover);
   }
 
-  .tilt-inner {
-    transform: translateZ(28px);
+  @media (min-width: 1024px) {
+    .group:hover .panel-img,
+    .group:focus-within .panel-img {
+      transform: scale(1.04) translate3d(0, 0, 0);
+    }
+  }
+
+  /*
+   * Scroll-velocity drift. `--scroll-velocity` is written by motion.ts as a
+   * normalised -1..1 value and decays to zero when scrolling stops, so sections
+   * ease back to rest rather than sitting at an offset. Capped at 0.875rem
+   * because the whole point is a hint of movement, not a visible jump; anything
+   * larger starts to fight the text being read.
+   */
+  .drift {
+    --drift: calc(var(--scroll-velocity, 0) * -0.875rem);
+    transform: translate3d(0, var(--drift), 0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .drift,
+    .panel,
+    .panel-img {
+      transform: none !important;
+    }
   }
 
   /*
@@ -580,8 +625,9 @@
     width: 100%;
   }
 
-  .tilt,
-  .tilt-inner {
+  .drift,
+  .panel,
+  .panel-img {
     transform: none !important;
   }
 

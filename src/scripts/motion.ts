@@ -162,42 +162,98 @@ export function initSectionReveal() {
 
 const INTERACTIVE = 'a, button, [role="button"], input, textarea, select, label, [data-cursor="grow"]';
 
-/** Rows that should lift toward the pointer as a grid. */
-const TILT_SELECTOR = '.tilt';
+/* ------------------------------------------------------------------ *
+ * Scroll velocity
+ * ------------------------------------------------------------------ */
 
 /**
- * 3D tilt on the featured-project rows.
+ * Sections drift in the direction of travel while the page is moving, and settle
+ * back once it stops.
  *
- * `--tilt-x` / `--tilt-y` are written per pointer move and the transform is
- * declared in global.css, so resetting is just clearing the two properties; the
- * CSS transition eases the card back on its own. Scaled to 16deg because these
- * are full-width rows: a fraction of the row's width is a small fraction of a
- * large distance, so the angle has to be large to read at all.
+ * Every other effect on the site is tied to scroll *position*, so it reads the
+ * same whether the visitor flicked a trackpad or crept with a wheel. This one is
+ * tied to *speed*, which is the only motion here that responds to how the page
+ * is being driven. `--scroll-velocity` is written on <html> in a normalised
+ * -1..1 range; global.css decides what consumes it.
+ *
+ * The value is eased toward its target on every frame and decays to zero when
+ * scrolling stops, so the page always comes to rest rather than sitting at some
+ * offset. It only ever writes a custom property — no layout is read or forced
+ * per element, which keeps this off the critical path.
  */
-export function initTilt() {
+export function initScrollVelocity() {
   if (REDUCED()) return;
-  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
 
-  for (const el of document.querySelectorAll<HTMLElement>(TILT_SELECTOR)) {
-    if (el.dataset.tiltBound) continue;
-    el.dataset.tiltBound = '';
+  const root = document.documentElement;
+  let target = 0;
+  let current = 0;
+  let lastY = window.scrollY;
+  let lastTime = performance.now();
+  let running = false;
 
-    el.addEventListener('pointerenter', () => el.dataset.active = '');
-    el.addEventListener('pointerleave', () => {
-      delete el.dataset.active;
-      delete el.dataset.hot;
-      el.style.setProperty('--tilt-x', '0deg');
-      el.style.setProperty('--tilt-y', '0deg');
-    });
-    el.addEventListener('pointermove', (event: PointerEvent) => {
-      const rect = el.getBoundingClientRect();
-      const nx = (event.clientX - rect.left) / rect.width - 0.5;
-      const ny = (event.clientY - rect.top) / rect.height - 0.5;
-      el.style.setProperty('--tilt-x', `${(-ny * 16).toFixed(2)}deg`);
-      el.style.setProperty('--tilt-y', `${(nx * 16).toFixed(2)}deg`);
-      el.dataset.hot = '';
-    });
-  }
+  const tick = () => {
+    current += (target - current) * 0.12;
+
+    // Below a threshold the direction is noise, not intent, so release to rest.
+    if (Math.abs(target) < 0.004) {
+      target = 0;
+      if (Math.abs(current) < 0.002) {
+        current = 0;
+        root.style.setProperty('--scroll-velocity', '0');
+        running = false;
+        return;
+      }
+    }
+
+    root.style.setProperty('--scroll-velocity', current.toFixed(4));
+    requestAnimationFrame(tick);
+  };
+
+  const wake = () => {
+    if (running) return;
+    running = true;
+    requestAnimationFrame(tick);
+  };
+
+  const measure = () => {
+    const now = performance.now();
+    const dt = now - lastTime;
+    // Ignore stale frames so a tab returning from the background does not read
+    // as an enormous flick.
+    if (dt < 16 || dt > 200) {
+      lastTime = now;
+      lastY = window.scrollY;
+      return;
+    }
+
+    const delta = window.scrollY - lastY;
+    lastY = window.scrollY;
+    lastTime = now;
+
+    // Pixels per millisecond, normalised against a brisk flick. 2px/ms is a
+    // fast-but-comfortable scroll; beyond that the value saturates at 1.
+    const speed = delta / dt;
+    target = Math.max(-1, Math.min(1, speed / 2));
+    wake();
+  };
+
+  window.addEventListener('scroll', measure, { passive: true });
+
+  // Release the offset when scrolling ends, so the page settles even if the
+  // final scroll event carries a small delta.
+  window.addEventListener(
+    'scrollend',
+    () => {
+      target = 0;
+      wake();
+    },
+    { passive: true },
+  );
+
+  window.addEventListener('resize', () => {
+    lastY = window.scrollY;
+    lastTime = performance.now();
+  }, { passive: true });
 }
 
 /**
@@ -282,6 +338,6 @@ export function initCursor() {
 export function initMotion() {
   initScrollEffects();
   initSectionReveal();
-  initTilt();
+  initScrollVelocity();
   initCursor();
 }
