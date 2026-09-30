@@ -1,0 +1,114 @@
+---
+/**
+ * Telemetry HUD (port from zamkara.dev)
+ *
+ * Fixed, low-contrast monospace telemetry strip positioned at the bottom of
+ * the viewport. Displays live client and system metrics without competing with
+ * the primary navigation:
+ *   CLIENT, VIEWPORT: WxH, SCREEN: WxH, DEPTH: 24BIT, UTC, LOCAL, UNIX,
+ *   ZONE: GMT+N, STATUS: ON.
+ *
+ * Dynamic behaviour:
+ *   - VIEWPORT updates dynamically on window resize.
+ *   - Clocks tick every second via Intl.DateTimeFormat and resolvedOptions().
+ *   - Timers are cleaned up on astro:before-swap and re-bound on astro:page-load.
+ *   - Strictly non-interactive (pointer-events: none) so links beneath stay clickable.
+ *   - Hidden on mobile viewports (< md) and in print output (.no-print).
+ */
+---
+
+<aside
+  id="telemetry-hud"
+  class="no-print pointer-events-none fixed inset-x-0 bottom-0 z-40 hidden select-none border-t border-white/5 bg-canvas/80 px-5 py-1.5 font-mono text-[10px] tracking-wider text-subtle/50 backdrop-blur-md md:flex md:items-center md:justify-between"
+  aria-label="System Telemetry"
+>
+  <div class="flex items-center gap-4">
+    <span class="text-subtle/70 font-semibold">CLIENT</span>
+    <span id="telem-viewport">VIEWPORT: --X--</span>
+    <span id="telem-screen">SCREEN: --X--</span>
+    <span id="telem-depth">DEPTH: --BIT</span>
+  </div>
+  <div class="flex items-center gap-4">
+    <span id="telem-utc">UTC: --:--:--</span>
+    <span id="telem-local">LOCAL: --:--:--</span>
+    <span id="telem-unix">UNIX: ----------</span>
+    <span id="telem-zone">ZONE: GMT+0</span>
+    <span class="inline-flex items-center gap-1.5 text-accent/80 font-medium">
+      <span class="inline-block size-1.5 rounded-full bg-accent animate-pulse"></span>
+      STATUS: ON
+    </span>
+  </div>
+</aside>
+
+<script>
+  let timer: number | undefined;
+
+  function updateTelemetry() {
+    const vpEl = document.getElementById('telem-viewport');
+    const scEl = document.getElementById('telem-screen');
+    const dpEl = document.getElementById('telem-depth');
+    const utcEl = document.getElementById('telem-utc');
+    const locEl = document.getElementById('telem-local');
+    const unxEl = document.getElementById('telem-unix');
+    const znEl = document.getElementById('telem-zone');
+
+    const now = new Date();
+
+    if (vpEl) {
+      vpEl.textContent = `VIEWPORT: ${window.innerWidth}X${window.innerHeight}`;
+    }
+    if (scEl && window.screen) {
+      scEl.textContent = `SCREEN: ${window.screen.width}X${window.screen.height}`;
+    }
+    if (dpEl && window.screen) {
+      dpEl.textContent = `DEPTH: ${window.screen.colorDepth || 24}BIT`;
+    }
+
+    if (utcEl) {
+      const utcTime = now.toISOString().substring(11, 19);
+      utcEl.textContent = `UTC: ${utcTime}`;
+    }
+
+    if (locEl) {
+      const timeFmt = new Intl.DateTimeFormat(undefined, {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      });
+      locEl.textContent = `LOCAL: ${timeFmt.format(now)}`;
+    }
+
+    if (unxEl) {
+      unxEl.textContent = `UNIX: ${Math.floor(now.getTime() / 1000)}`;
+    }
+
+    if (znEl) {
+      const offsetMinutes = -now.getTimezoneOffset();
+      const sign = offsetMinutes >= 0 ? '+' : '-';
+      const hours = Math.floor(Math.abs(offsetMinutes) / 60);
+      znEl.textContent = `ZONE: GMT${sign}${hours}`;
+    }
+  }
+
+  function startTelemetry() {
+    if (timer) {
+      clearInterval(timer);
+      timer = undefined;
+    }
+    updateTelemetry();
+    timer = window.setInterval(updateTelemetry, 1000);
+  }
+
+  // Clean up interval on page swap to avoid runaway intervals across navigations
+  document.addEventListener('astro:before-swap', () => {
+    if (timer) {
+      clearInterval(timer);
+      timer = undefined;
+    }
+  });
+
+  document.addEventListener('astro:page-load', startTelemetry);
+  window.addEventListener('resize', updateTelemetry, { passive: true });
+  startTelemetry();
+</script>

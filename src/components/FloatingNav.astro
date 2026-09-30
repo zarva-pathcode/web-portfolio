@@ -136,6 +136,38 @@ const isRoute = (href: string) => href === 'cv';
       close?.classList.toggle('hidden', !next);
     });
 
+    /**
+     * Nav retract on scroll (port from zamkara.dev).
+     *
+     * Retracts the header on scroll-down and brings it back on scroll-up.
+     * When the mobile drawer is open or near the top of the page, the header
+     * is kept visible. Runs on all pages, including routes without section anchors.
+     */
+    const header = document.querySelector<HTMLElement>('header.nav-condense');
+    let lastY = window.scrollY;
+
+    const syncRetract = () => {
+      const y = window.scrollY;
+      const diff = y - lastY;
+      const isDrawerOpen = drawer && !drawer.classList.contains('hidden');
+
+      if (isDrawerOpen || y <= 20) {
+        header?.classList.remove('nav-scrolling-down');
+        header?.classList.add('nav-scrolling-up');
+      } else if (diff < -4) {
+        header?.classList.remove('nav-scrolling-down');
+        header?.classList.add('nav-scrolling-up');
+      } else if (diff > 4 && y > 80) {
+        header?.classList.remove('nav-scrolling-up');
+        header?.classList.add('nav-scrolling-down');
+      }
+      lastY = y;
+    };
+
+    syncRetract();
+    window.addEventListener('scroll', syncRetract, { passive: true });
+    window.addEventListener('resize', syncRetract);
+
     // Scroll-spy: highlight the last section whose top has passed the reading
     // line. A scroll handler is used rather than IntersectionObserver because
     // the answer depends on section *order* relative to a line, not on overlap.

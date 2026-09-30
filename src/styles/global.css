@@ -119,29 +119,43 @@
   }
 
   /*
-   * Only the two paint properties are animated — backdrop-filter stays on at
-   * all times, which is imperceptible against a black hero and avoids the
-   * interpolation jank a filter keyframe would cause. Longhand, see the note
-   * above the reveal block.
+   * Nav retract on scroll (port from zamkara.dev)
+   *
+   * Replaces the old background crossfade with a physical retract.
+   * On desktop viewports (>= md), animation-timeline: scroll(root block)
+   * retracts the header by -100% across 0..120px scroll.
+   *
+   * On mobile (< md), the bar is never retracted away: #nav-toggle remains
+   * permanently reachable for touch and keyboard users (meeting the
+   * accessibility requirement and passing vtrancheck step 6).
+   *
+   * When scrolling up at any point, header.nav-scrolling-up brings the bar
+   * back down smoothly via transition.
    */
-  .nav-condense {
-    animation-name: nav-condense;
-    animation-duration: auto;
-    animation-timing-function: linear;
-    animation-fill-mode: both;
-    animation-timeline: scroll(root block);
-    animation-range: 0 120px;
+  @media (min-width: 768px) {
+    .nav-condense {
+      animation-name: nav-retract;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 120px;
+    }
   }
 
-  @keyframes nav-condense {
+  @keyframes nav-retract {
     from {
-      background-color: rgba(0, 0, 0, 0);
-      border-bottom-color: rgba(255, 255, 255, 0);
+      transform: translateY(0);
     }
     to {
-      background-color: rgba(0, 0, 0, 0.75);
-      border-bottom-color: rgba(255, 255, 255, 0.08);
+      transform: translateY(-100%);
     }
+  }
+
+  header.nav-scrolling-up {
+    animation: none !important;
+    transform: translateY(0) !important;
+    transition: transform 0.3s var(--ease-enter);
   }
 
   /* Section eyebrow — the mono, uppercase, wide-tracked micro-label. */
@@ -383,10 +397,43 @@
   }
 
   /*
-   * Hero entrance. An opacity fade, not a scale: the frame is right-aligned
-   * against the viewport edge, so scaling it moves its left border sideways and
-   * that border reads as a sliding line across the portrait during load. A fade
-   * has no edge to move.
+   * Ambient portrait fade (port from heynesh.com)
+   *
+   * The portrait frame is fixed in the viewport throughout the page. As the hero
+   * scrolls away (0 to 100vh), the image fades from 1.0 to 0.3 to become an
+   * ambient background texture behind the lower sections.
+   *
+   * Transform ownership rule: .hero-parallax owns the vertical drift transform;
+   * .hero-intro owns the cursor-follow transform; this effect animates opacity
+   * on the inner image itself (.hero-ambient-img). Exactly one transform per element.
+   */
+  .hero-ambient-img {
+    animation-name: hero-ambient-fade;
+    animation-duration: auto;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: scroll(root block);
+    animation-range: 0 100vh;
+  }
+
+  @keyframes hero-ambient-fade {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0.3;
+    }
+  }
+
+  /*
+   * Hero entrance and 3D cursor-follow (port from heydane.framer.website).
+   *
+   * An opacity fade on entrance, combined with a 3D perspective tilt driven by
+   * rAF lerp in motion.ts via --portrait-rx, --portrait-ry, --portrait-tx, --portrait-ty.
+   *
+   * Transform ownership: .hero-intro is the sole owner of transform here. Its
+   * animation: hero-intro is opacity-only, so there is no transform conflict.
+   * Transition eases the settle home when pointer leaves.
    */
   @keyframes hero-intro {
     from {
@@ -399,6 +446,9 @@
 
   .hero-intro {
     animation: hero-intro 0.9s var(--ease-enter) both;
+    transform: perspective(1200px) rotateY(var(--portrait-rx, 0deg)) rotateX(var(--portrait-ry, 0deg)) translate3d(var(--portrait-tx, 0px), var(--portrait-ty, 0px), 0);
+    transition: transform 0.6s var(--ease-hover);
+    will-change: transform;
   }
 
   /* --- Pointer-driven depth ------------------------------------------------ */
@@ -601,10 +651,20 @@
     transform: none !important;
   }
 
+  #transition-square,
+  #transition-label-layer {
+    display: none !important;
+  }
+
   .hero-parallax,
   .hero-intro {
     animation: none !important;
     transform: none !important;
+  }
+
+  .hero-ambient-img {
+    animation: none !important;
+    opacity: 1 !important;
   }
 
   /* Restores the pre-redesign framing, which covered the full width. */
@@ -623,6 +683,7 @@
 
   .nav-condense {
     animation: none !important;
+    transform: none !important;
     background-color: rgba(0, 0, 0, 0.75) !important;
     border-bottom-color: rgba(255, 255, 255, 0.08) !important;
   }

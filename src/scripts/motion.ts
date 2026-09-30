@@ -37,16 +37,21 @@ export function initScrollEffects() {
   if (REDUCED()) return;
 
   const hero = document.querySelector<HTMLElement>('.hero-parallax');
+  const ambientImg = document.querySelector<HTMLElement>('.hero-ambient-img');
   const spine = document.querySelector<HTMLElement>('.spine-draw');
   const progress = document.querySelector<HTMLElement>('.scroll-progress');
-  if (!hero && !spine && !progress) return;
+  const nav = document.querySelector<HTMLElement>('header.nav-condense');
+  if (!hero && !ambientImg && !spine && !progress && !nav) return;
 
   const state = {
     hero: hero ? hero.style.transform : '',
+    ambient: ambientImg ? ambientImg.style.opacity : '',
     spine: spine ? spine.style.transform : '',
     progress: progress ? progress.style.transform : '',
+    nav: nav ? nav.style.transform : '',
   };
 
+  let lastNavY = window.scrollY;
   let queued = false;
 
   const update = () => {
@@ -61,6 +66,41 @@ export function initScrollEffects() {
       if (next !== state.hero) {
         hero.style.transform = next;
         state.hero = next;
+      }
+    }
+
+    if (ambientImg) {
+      // Ambient portrait fade (port from heynesh.com): 1 -> 0.3 across 0..100vh
+      const span = Math.min(window.innerHeight, document.body.scrollHeight || 1e5);
+      const p = Math.min(1, Math.max(0, window.scrollY / span));
+      const next = (1 - p * 0.7).toFixed(3);
+      if (next !== state.ambient) {
+        ambientImg.style.opacity = next;
+        state.ambient = next;
+      }
+    }
+
+    if (nav) {
+      // Nav retract on scroll (port from zamkara.dev)
+      if (window.innerWidth >= 768) {
+        const y = window.scrollY;
+        const diff = y - lastNavY;
+        let next = state.nav;
+        if (y <= 20 || diff < -4) {
+          next = 'translateY(0)';
+        } else if (diff > 4 && y > 80) {
+          next = 'translateY(-100%)';
+        }
+        if (next !== state.nav) {
+          nav.style.transform = next;
+          state.nav = next;
+        }
+        lastNavY = y;
+      } else {
+        if (state.nav !== 'none') {
+          nav.style.transform = 'none';
+          state.nav = 'none';
+        }
       }
     }
 
@@ -329,6 +369,111 @@ export function initCursor() {
   });
 }
 
+/**
+ * 3D cursor-follow on the hero portrait (port from heydane.framer.website).
+ *
+ * Implements a heavy rAF lerp (easing ~0.08) so the portrait lags behind the
+ * pointer and settles with weight, rather than tracking rigidly:
+ *   rotation.y += (mouseX * sensitivity - rotation.y) * 0.08
+ *
+ * Consumed in global.css on .hero-intro as:
+ *   transform: perspective(1200px) rotateY(var(--portrait-rx)) rotateX(var(--portrait-ry)) translate3d(var(--portrait-tx), var(--portrait-ty), 0)
+ *
+ * Transform ownership rule: .hero-intro is the sole owner of transform here. Its
+ * CSS keyframe is opacity-only.
+ *
+ * Capped to ±4deg rotation and ±10px translation.
+ * Gated on (hover: hover) and (pointer: fine). Cleared on pointerleave.
+ * Under reduced motion: disabled completely.
+ */
+export function initPortraitFollow() {
+  if (REDUCED()) return;
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+
+  const hero = document.getElementById('hero');
+  const target = document.querySelector<HTMLElement>('.hero-intro');
+  if (!hero || !target) return;
+
+  let targetRx = 0;
+  let targetRy = 0;
+  let targetTx = 0;
+  let targetTy = 0;
+
+  let currentRx = 0;
+  let currentRy = 0;
+  let currentTx = 0;
+  let currentTy = 0;
+
+  let running = false;
+
+  const clamp = (val: number, min: number, max: number) => Math.min(max, Math.max(min, val));
+
+  const tick = () => {
+    // Heavy lerp (~0.08 easing) so portrait lags and settles
+    const ease = 0.08;
+    currentRx += (targetRx - currentRx) * ease;
+    currentRy += (targetRy - currentRy) * ease;
+    currentTx += (targetTx - currentTx) * ease;
+    currentTy += (targetTy - currentTy) * ease;
+
+    target.style.setProperty('--portrait-rx', `${currentRx.toFixed(3)}deg`);
+    target.style.setProperty('--portrait-ry', `${currentRy.toFixed(3)}deg`);
+    target.style.setProperty('--portrait-tx', `${currentTx.toFixed(2)}px`);
+    target.style.setProperty('--portrait-ty', `${currentTy.toFixed(2)}px`);
+
+    const settled =
+      Math.abs(targetRx - currentRx) < 0.01 &&
+      Math.abs(targetRy - currentRy) < 0.01 &&
+      Math.abs(targetTx - currentTx) < 0.05 &&
+      Math.abs(targetTy - currentTy) < 0.05;
+
+    if (settled) {
+      running = false;
+      if (targetRx === 0 && targetRy === 0 && targetTx === 0 && targetTy === 0) {
+        target.style.setProperty('--portrait-rx', '0deg');
+        target.style.setProperty('--portrait-ry', '0deg');
+        target.style.setProperty('--portrait-tx', '0px');
+        target.style.setProperty('--portrait-ty', '0px');
+      }
+      return;
+    }
+
+    requestAnimationFrame(tick);
+  };
+
+  const wake = () => {
+    if (running) return;
+    running = true;
+    requestAnimationFrame(tick);
+  };
+
+  const onPointerMove = (event: PointerEvent) => {
+    if (event.pointerType !== 'mouse') return;
+    const rect = hero.getBoundingClientRect();
+    const nx = (event.clientX - rect.left) / rect.width - 0.5;
+    const ny = (event.clientY - rect.top) / rect.height - 0.5;
+
+    // Caps: ±4deg rotation, ±10px translation
+    targetRx = clamp(nx * 8, -4, 4);
+    targetRy = clamp(-ny * 8, -4, 4);
+    targetTx = clamp(nx * 20, -10, 10);
+    targetTy = clamp(ny * 20, -10, 10);
+
+    wake();
+  };
+
+  const onPointerLeave = () => {
+    targetRx = 0;
+    targetRy = 0;
+    targetTx = 0;
+    targetTy = 0;
+    wake();
+  };
+
+  hero.addEventListener('pointermove', onPointerMove, { passive: true });
+  hero.addEventListener('pointerleave', onPointerLeave, { passive: true });
+}
+
 /* ------------------------------------------------------------------ */
 
 export function initMotion() {
@@ -336,4 +481,5 @@ export function initMotion() {
   initSectionReveal();
   initImageParallax();
   initCursor();
+  initPortraitFollow();
 }
