@@ -196,6 +196,66 @@ export function initSectionReveal() {
   for (const el of targets) observer.observe(el);
 }
 
+/**
+ * Forces any still-hidden reveal to its final state once the visitor is close to
+ * the end of the document.
+ *
+ * A `view()` timeline measures progress against the element's own travel through
+ * the viewport. For the last elements on a page that travel is the problem: the
+ * footer only reaches the end of its entry range at the end of the document, so
+ * whatever the range says, the content is still at opacity 0 for most of the
+ * journey down. Measured on the home page, the footer was invisible across the
+ * final 400px of scroll and only appeared in the last 200.
+ *
+ * No range setting fixes that, because for the final element "has arrived" and
+ * "page is over" are the same scroll position. This runs on every browser,
+ * including those where the scroll timeline itself is unavailable, and cancels
+ * the animation outright rather than trying to fast-forward it. It is
+ * deliberately not gated on HAS_SCROLL_TIMELINE: the stranding happens on
+ * Chromium too, where the timeline is the thing doing the stranding.
+ */
+export function initRevealSafetyNet() {
+  if (REDUCED()) return;
+
+  let queued = false;
+
+  const check = () => {
+    queued = false;
+
+    const doc = document.documentElement;
+    const max = doc.scrollHeight - window.innerHeight;
+    /*
+     * Two viewports short of the bottom, not one.
+     *
+     * Measured with a one-viewport threshold, the footer still sat at opacity 0
+     * for the bottom 800px of the page: the net fired, but only once the
+     * visitor was nearly there, so the reveal had almost no run-up. Two
+     * viewports means the escape hatch fires while that content is still a
+     * comfortable scroll away, which is what "already readable" has to mean for
+     * something at the end of a document.
+     */
+    if (window.scrollY < max - window.innerHeight * 2) return;
+
+    const stranded = document.querySelectorAll<HTMLElement>(
+      '.reveal:not(.is-reached), .reveal-group > :not(.is-reached)',
+    );
+    for (const el of stranded) el.classList.add('is-reached');
+
+    if (stranded.length) window.removeEventListener('scroll', request);
+  };
+
+  const request = () => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(check);
+  };
+
+  window.addEventListener('scroll', request, { passive: true });
+  // A page restored mid-document, or a deep link, can already be near the bottom
+  // before this binds.
+  check();
+}
+
 /* ------------------------------------------------------------------ *
  * Pointer effects
  * ------------------------------------------------------------------ */
@@ -479,6 +539,7 @@ export function initPortraitFollow() {
 export function initMotion() {
   initScrollEffects();
   initSectionReveal();
+  initRevealSafetyNet();
   initImageParallax();
   initCursor();
   initPortraitFollow();

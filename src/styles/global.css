@@ -284,7 +284,33 @@
     animation-timing-function: linear;
     animation-fill-mode: both;
     animation-timeline: view();
-    animation-range: entry 0% entry 40%;
+    /*
+     * Completes at `entry 100%`, when the element is fully in the viewport,
+     * rather than at 40% of the way in.
+     *
+     * A range that ends partway through entry looked deliberate but was not: for
+     * a short element the whole entry phase is only as tall as the element, so
+     * 40% of it is a handful of pixels at the very end of the page. Measured on
+     * the home page, the footer sat at opacity 0 for the last 400px of scroll
+     * and only appeared within the final 200. An entry-based range cannot fix
+     * that on its own, because for the last element on the page "arrival" and
+     * "end of document" are the same scroll position. The range here finishes as
+     * early as the timeline allows, and `.is-reached` below covers the rest.
+     */
+    animation-range: entry 0% entry 100%;
+  }
+
+  /*
+   * Escape hatch, applied by motion.ts once the visitor is close enough to the
+   * bottom that an entry-based reveal would otherwise never play out. Cancels the
+   * animation and pins the element to its final state, so content near the end
+   * of the document is readable rather than stranded at opacity 0.
+   */
+  .reveal.is-reached,
+  .reveal-group > .is-reached {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 
   /*
@@ -298,7 +324,7 @@
     animation-timing-function: linear;
     animation-fill-mode: both;
     animation-timeline: view();
-    animation-range: entry 0% entry 45%;
+    animation-range: entry 0% entry 100%;
     animation-delay: calc(var(--reveal-i, 0) * 80ms);
   }
 

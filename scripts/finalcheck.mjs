@@ -4,7 +4,7 @@ import { chromium } from 'playwright';
 /**
  * Checks run against a real build via `astro preview`, not the dev server: the
  * sitemap is generated at build time, so `/sitemap-index.xml` only exists in
- * `dist/`. Port 4321 is deliberately left to the dev server.
+ * `dist/`. Port 4322 is deliberately left to the dev server.
  */
 const BASE = 'http://localhost:4322';
 const browser = await chromium.launch({ channel: 'chromium' });
