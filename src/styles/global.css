@@ -437,14 +437,6 @@
   }
 
   /*
-   * The screenshot sits at its natural aspect ratio with no clip of its own, so
-   * nothing can cut it. Hovering scales it gently in place.
-   */
-  .panel-img {
-    transition: transform 0.7s var(--ease-hover);
-  }
-
-  /*
    * Project panel parallax. The whole figure drifts by `--drift`, which motion.ts
    * writes while the row crosses the viewport. Applied to the panel rather than to
    * an inner clipped layer: drifting an image inside `overflow: hidden` means
@@ -464,8 +456,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .panel,
-    .panel-img {
+    .panel {
       transform: none !important;
     }
   }

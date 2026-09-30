@@ -21,9 +21,8 @@ const projects = defineCollection({
       cover: image(),
       coverAlt: z.string(),
       coverPosition: z.string().default('center'),
-      // Landscape screenshots can bleed edge to edge; portrait or transparent
-      // mockups need to sit inside the frame instead of being cropped.
-      coverFit: z.enum(['cover', 'contain']).default('cover'),
+      // Covers keep their natural aspect ratio via `h-auto`. There is no fit
+      // toggle: every one of them is a real screenshot that must not be cropped.
       featured: z.boolean().default(false),
       order: z.number().default(0),
       stack: z.array(z.string()),
