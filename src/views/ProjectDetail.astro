@@ -72,6 +72,12 @@ const blocks = [
       </dl>
     </header>
 
+    {/*
+      Same reasoning as the featured list: the covers have four different aspect
+      ratios between 0.61 and 1.41, so forcing 16/10 cropped them. `h-auto` keeps
+      the natural ratio and `max-h-[70vh]` still stops a tall portrait from
+      dominating the viewport.
+    */}
     <figure class="mt-14 overflow-hidden rounded-2xl border border-white/10 bg-surface p-3 md:p-5">
       <BlurImage
         src={project.data.cover}
@@ -82,11 +88,7 @@ const blocks = [
         loading="eager"
         fetchpriority="high"
         objectPosition={project.data.coverPosition}
-        imgClass={[
-          project.data.coverFit === 'contain'
-            ? 'max-h-[70vh] object-contain'
-            : 'aspect-[16/10] object-cover',
-        ].join(' ')}
+        imgClass="h-auto max-h-[70vh] w-full"
       />
     </figure>
 

@@ -14,7 +14,7 @@ const projects = (await getCollection('projects'))
   .sort((a, b) => a.data.order - b.data.order);
 ---
 
-<section id="projects" class="drift canvas border-t border-white/10 py-28 md:py-40">
+<section id="projects" class="canvas border-t border-white/10 py-28 md:py-40">
   <div
     class="reveal mb-20 flex flex-col justify-between md:mb-28 md:flex-row md:items-end"
   >
@@ -131,6 +131,7 @@ const projects = (await getCollection('projects'))
           <div class="relative lg:col-span-7">
             <figure
               class="panel relative space-y-4 rounded-2xl border border-white/10 bg-surface p-5 transition-[border-color,box-shadow] duration-500 group-hover:border-accent/30 group-hover:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.85)] md:p-7"
+              data-parallax="34"
             >
               <div class="flex items-center justify-between border-b border-white/6 pb-4">
                 <div class="flex items-center gap-2">
@@ -143,6 +144,22 @@ const projects = (await getCollection('projects'))
                 </span>
               </div>
 
+              {/*
+                No forced aspect ratio and no object-fit cropping. The four covers
+                are genuinely different shapes — 0.61 portrait for Artiva, 1.41 for
+                Coacivo, 1.27 for Artiva's laptop, 0.82 for Rektor Cup — so a fixed
+                16/10 with object-cover was slicing 10% to 62% off each of them and
+                cutting off the third phone on the Coacivo shot. `w-full h-auto`
+                keeps the natural ratio, so the whole screenshot is always visible.
+
+                The parallax lives on the figure itself rather than on an inner
+                clipped layer. Drifting the image inside an `overflow: hidden`
+                frame requires over-scaling it to cover the travel, and that
+                over-scale is cropped on the horizontal axis — which is what cut
+                the outer phone screens off the Coacivo shot. Moving the whole
+                panel keeps the screenshot pixel-intact and is more legible, since
+                the frame and the image travel together.
+              */}
               <BlurImage
                 src={project.data.cover}
                 lqip={project.data.lqip}
@@ -151,12 +168,7 @@ const projects = (await getCollection('projects'))
                 sizes="(min-width: 1024px) 42rem, 100vw"
                 loading={i === 0 ? 'eager' : 'lazy'}
                 objectPosition={project.data.coverPosition}
-                imgClass={[
-                  'panel-img transition-transform duration-700 ease-[cubic-bezier(0.4,0,0.2,1)]',
-                  project.data.coverFit === 'contain'
-                    ? 'max-h-[28rem] object-contain'
-                    : 'aspect-[16/10] object-cover',
-                ].join(' ')}
+                imgClass="h-auto w-full transition-transform duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:scale-[1.03]"
               />
             </figure>
           </div>

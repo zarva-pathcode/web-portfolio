@@ -416,7 +416,6 @@
    * `overflow: visible` so nothing clips it.
    */
   .panel {
-    transform: scale(1);
     /*
      * Pinned to the top left on purpose. The panel column already sits against
      * the right edge of the viewport, so the default centre origin would scale it
@@ -438,36 +437,33 @@
   }
 
   /*
-   * The screenshot takes the same velocity as the section drift, but far more
-   * gently and in the opposite direction, so it reads as a small parallax
-   * against the column rather than as part of the page movement.
+   * The screenshot sits at its natural aspect ratio with no clip of its own, so
+   * nothing can cut it. Hovering scales it gently in place.
    */
   .panel-img {
-    transform: scale(1) translate3d(0, calc(var(--scroll-velocity, 0) * 0.25rem), 0);
     transition: transform 0.7s var(--ease-hover);
   }
 
+  /*
+   * Project panel parallax. The whole figure drifts by `--drift`, which motion.ts
+   * writes while the row crosses the viewport. Applied to the panel rather than to
+   * an inner clipped layer: drifting an image inside `overflow: hidden` means
+   * over-scaling it to cover the travel, and that over-scale is then cropped on
+   * the horizontal axis, which cut the outer screens off the Coacivo shot.
+   */
+  .panel {
+    transform: translate3d(0, var(--drift, 0px), 0);
+  }
+
   @media (min-width: 1024px) {
-    .group:hover .panel-img,
-    .group:focus-within .panel-img {
-      transform: scale(1.04) translate3d(0, 0, 0);
+    .group:hover .panel,
+    .group:focus-within .panel {
+      transform: translate3d(0, var(--drift, 0px), 0) scale(1.04) translateY(-0.375rem);
+      z-index: 2;
     }
   }
 
-  /*
-   * Scroll-velocity drift. `--scroll-velocity` is written by motion.ts as a
-   * normalised -1..1 value and decays to zero when scrolling stops, so sections
-   * ease back to rest rather than sitting at an offset. Capped at 0.875rem
-   * because the whole point is a hint of movement, not a visible jump; anything
-   * larger starts to fight the text being read.
-   */
-  .drift {
-    --drift: calc(var(--scroll-velocity, 0) * -0.875rem);
-    transform: translate3d(0, var(--drift), 0);
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    .drift,
     .panel,
     .panel-img {
       transform: none !important;
@@ -623,12 +619,6 @@
   /* Restores the pre-redesign framing, which covered the full width. */
   .hero-intro {
     width: 100%;
-  }
-
-  .drift,
-  .panel,
-  .panel-img {
-    transform: none !important;
   }
 
   .cursor-dot {

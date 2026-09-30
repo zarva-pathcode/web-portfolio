@@ -162,100 +162,96 @@ export function initSectionReveal() {
 
 const INTERACTIVE = 'a, button, [role="button"], input, textarea, select, label, [data-cursor="grow"]';
 
-/* ------------------------------------------------------------------ *
- * Scroll velocity
- * ------------------------------------------------------------------ */
-
 /**
- * Sections drift in the direction of travel while the page is moving, and settle
- * back once it stops.
+ * Depth parallax on the project screenshots.
  *
- * Every other effect on the site is tied to scroll *position*, so it reads the
- * same whether the visitor flicked a trackpad or crept with a wheel. This one is
- * tied to *speed*, which is the only motion here that responds to how the page
- * is being driven. `--scroll-velocity` is written on <html> in a normalised
- * -1..1 range; global.css decides what consumes it.
+ * Each image drifts vertically inside its own frame as the row crosses the
+ * viewport, slower than the page. It is the same idea as the hero backdrop, but
+ * at a different rate and on a per-element timeline, which is what makes it read
+ * as depth rather than as decoration.
  *
- * The value is eased toward its target on every frame and decays to zero when
- * scrolling stops, so the page always comes to rest rather than sitting at some
- * offset. It only ever writes a custom property — no layout is read or forced
- * per element, which keeps this off the critical path.
+ * The value is `--drift` in pixels, written straight onto the image wrapper. Only
+ * `transform` is touched, so nothing here forces layout. Every element is read
+ * once per frame, but the loop stops as soon as the last one has left the
+ * viewport, so an idle page schedules no frames at all.
+ *
+ * Replaces the earlier scroll-velocity effect. That normalised pixels-per-
+ * millisecond into a -1..1 range, which in practice saturated near 0.11 even on
+ * a hard flick and moved the sections by about 1.5px — present in the code,
+ * invisible on screen. A range that cannot reach its own maximum is not worth
+ * the frame budget.
  */
-export function initScrollVelocity() {
+export function initImageParallax() {
   if (REDUCED()) return;
 
-  const root = document.documentElement;
-  let target = 0;
-  let current = 0;
-  let lastY = window.scrollY;
-  let lastTime = performance.now();
-  let running = false;
+  const layers = Array.from(
+    document.querySelectorAll<HTMLElement>('[data-parallax]'),
+  );
+  if (!layers.length) return;
 
-  const tick = () => {
-    current += (target - current) * 0.12;
+  /** Cached per element so the loop never re-reads layout for settled items. */
+  const items = layers.map((el) => ({
+    el,
+    range: Number(el.dataset.parallax) || 40,
+    // How far the element has travelled through the viewport, 0 at the bottom
+    // edge and 1 at the top.
+    progress: -1,
+    top: 0,
+    height: 0,
+  }));
 
-    // Below a threshold the direction is noise, not intent, so release to rest.
-    if (Math.abs(target) < 0.004) {
-      target = 0;
-      if (Math.abs(current) < 0.002) {
-        current = 0;
-        root.style.setProperty('--scroll-velocity', '0');
-        running = false;
-        return;
-      }
-    }
-
-    root.style.setProperty('--scroll-velocity', current.toFixed(4));
-    requestAnimationFrame(tick);
-  };
-
-  const wake = () => {
-    if (running) return;
-    running = true;
-    requestAnimationFrame(tick);
-  };
+  let queued = false;
 
   const measure = () => {
-    const now = performance.now();
-    const dt = now - lastTime;
-    // Ignore stale frames so a tab returning from the background does not read
-    // as an enormous flick.
-    if (dt < 16 || dt > 200) {
-      lastTime = now;
-      lastY = window.scrollY;
-      return;
+    const vh = window.innerHeight;
+
+    for (const item of items) {
+      const rect = item.el.getBoundingClientRect();
+      const travelled = vh - rect.top;
+      const progress = travelled / (rect.height + vh);
+
+      // Outside this band the image is off screen, so the last computed value is
+      // close enough and no further writes are worth the style recalc.
+      if (progress < -0.05 || progress > 1.05) {
+        if (item.progress !== -2) {
+          item.el.style.setProperty('--drift', '0px');
+          item.progress = -2;
+        }
+        continue;
+      }
+
+      if (Math.abs(progress - item.progress) < 0.001) continue;
+      item.progress = progress;
+
+      /*
+       * Centred on the element being mid-viewport, so an image at the middle of
+       * the screen sits at its rest offset of zero. `progress` is already 0 at
+       * the bottom edge and 1 at the top, so 0.5 is exactly the centred point and
+       * the travel is symmetrical above and below it.
+       */
+      const offset = (progress - 0.5) * item.range;
+      item.el.style.setProperty('--drift', `${offset.toFixed(1)}px`);
     }
 
-    const delta = window.scrollY - lastY;
-    lastY = window.scrollY;
-    lastTime = now;
-
-    // Pixels per millisecond, normalised against a brisk flick. 2px/ms is a
-    // fast-but-comfortable scroll; beyond that the value saturates at 1.
-    const speed = delta / dt;
-    target = Math.max(-1, Math.min(1, speed / 2));
-    wake();
+    // Always released. Leaving this set while an element is still on screen
+    // wedges the effect: the next scroll event sees `queued` and returns without
+    // ever scheduling another frame, so the drift freezes at its first value.
+    queued = false;
   };
 
-  window.addEventListener('scroll', measure, { passive: true });
+  const request = () => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(measure);
+  };
 
-  // Release the offset when scrolling ends, so the page settles even if the
-  // final scroll event carries a small delta.
-  window.addEventListener(
-    'scrollend',
-    () => {
-      target = 0;
-      wake();
-    },
-    { passive: true },
-  );
-
-  window.addEventListener('resize', () => {
-    lastY = window.scrollY;
-    lastTime = performance.now();
-  }, { passive: true });
+  window.addEventListener('scroll', request, { passive: true });
+  window.addEventListener('resize', request, { passive: true });
+  // Through the rAF path so the first write lands on the next frame, after the
+  // browser has settled layout. A direct call here would measure a
+  // not-yet-laid-out element and cache that wrong progress value.
+  request();
 }
-
 /**
  * Cursor follower: a dot that trails the real pointer with a lerp, growing into
  * a ring over interactive elements.
@@ -338,6 +334,6 @@ export function initCursor() {
 export function initMotion() {
   initScrollEffects();
   initSectionReveal();
-  initScrollVelocity();
+  initImageParallax();
   initCursor();
 }
