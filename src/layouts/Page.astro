@@ -1,0 +1,22 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import Base from './Base.astro';
+import FloatingNav from '../components/FloatingNav.astro';
+import Footer from '../components/Footer.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  article?: boolean;
+}
+---
+
+<Base {...Astro.props}>
+  <ClientRouter />
+  <FloatingNav />
+  <main id="main">
+    <slot />
+  </main>
+  <Footer />
+</Base>

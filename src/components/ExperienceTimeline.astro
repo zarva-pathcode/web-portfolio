@@ -1,0 +1,118 @@
+---
+import { getCollection } from 'astro:content';
+import { t, type Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const tr = t(locale);
+
+const roles = (await getCollection('experiences')).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+
+// Tailwind cannot see interpolated class names, so the fading spine dots come
+// from a fixed table instead of being computed per index. The current role is
+// the single place the accent marks "where you are now".
+const DOT_RING = [
+  'border-accent',
+  'border-white/40',
+  'border-white/30',
+  'border-white/25',
+  'border-white/20',
+];
+const DOT_CORE = ['bg-accent', 'bg-white/40', 'bg-white/30', 'bg-white/25', 'bg-white/20'];
+---
+
+<section id="experience" class="canvas border-t border-white/10 py-28 md:py-40">
+  <div class="mb-20 flex flex-col justify-between md:mb-28 md:flex-row md:items-end">
+    <div class="space-y-3">
+      <span class="eyebrow">{tr['experience.eyebrow']}</span>
+      <h3 class="text-3xl font-semibold tracking-tighter text-ink sm:text-5xl">
+        {tr['experience.title']}
+      </h3>
+    </div>
+    <p class="mt-4 max-w-md text-base leading-relaxed text-subtle md:mt-0 md:text-lg">
+      {tr['experience.lede']}
+    </p>
+  </div>
+
+  <div class="relative pl-6 md:pl-10">
+    <div
+      class="spine-draw pointer-events-none absolute top-2 bottom-6 left-[7px] w-px bg-white/15 md:left-[9px]"
+      aria-hidden="true"
+    >
+    </div>
+
+    <div class="space-y-20 md:space-y-24">
+      {
+        roles.map((role, i) => (
+          <div class="reveal relative">
+            <div
+              class:list={[
+                'absolute top-1.5 -left-[24px] grid size-3.5 place-items-center rounded-full bg-black border-2 md:-left-[32px]',
+                DOT_RING[i] ?? 'border-white/20',
+              ]}
+              aria-hidden="true"
+            >
+              <div
+                class:list={[
+                  'size-1 rounded-full',
+                  DOT_CORE[i] ?? 'bg-white/20',
+                ]}
+              />
+            </div>
+
+            <div class="space-y-4">
+              <div class="flex flex-col justify-between gap-2 border-b border-white/6 pb-4 md:flex-row md:items-baseline">
+                <div>
+                  <div class="flex flex-wrap items-center gap-3">
+                    <h4 class="text-xl font-semibold tracking-tight text-ink md:text-3xl">
+                      {role.data.role}
+                    </h4>
+                    {role.data.type && (
+                      <span class="rounded border border-white/10 px-2 py-0.5 font-mono text-xs tracking-wider text-subtle uppercase">
+                        {role.data.type}
+                      </span>
+                    )}
+                  </div>
+                  <p class="mt-1 text-sm text-subtle md:text-base">
+                    {role.data.company} • {role.data.location}
+                  </p>
+                </div>
+                <span class="font-mono text-xs tracking-wider whitespace-nowrap text-subtle uppercase">
+                  {role.data.period}
+                </span>
+              </div>
+
+              {role.data.project && (
+                <p class="pt-2 text-sm leading-relaxed text-subtle md:text-base">
+                  <span class="font-mono text-[11px] tracking-wider text-muted uppercase">
+                    {role.data.project}
+                  </span>{' '}
+                  — {role.data.summary}
+                </p>
+              )}
+
+              <ul class="reveal-group max-w-3xl space-y-2 pt-1 text-sm text-subtle">
+                {role.data.points.map((point) => (
+                  <li class="flex items-start gap-3">
+                    <span class="mt-1 font-mono text-xs text-white/40">—</span>
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div class="flex flex-wrap gap-2 pt-4">
+                {role.data.stack.map((tech) => (
+                  <span class="tag-outline">{tech}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>

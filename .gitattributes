@@ -1,0 +1,13 @@
+# Normalise line endings on checkin so the same blob is stored on every OS.
+# Without this, Windows checkouts would commit CRLF and the diff against
+# Linux/macOS contributors would show every file as changed.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.avif binary
+*.ico binary
+*.woff binary
+*.woff2 binary

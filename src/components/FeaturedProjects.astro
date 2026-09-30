@@ -1,0 +1,151 @@
+---
+import { getCollection } from 'astro:content';
+import BlurImage from './BlurImage.astro';
+import { t, localePath, type Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const tr = t(locale);
+
+const projects = (await getCollection('projects'))
+  .filter((p) => p.data.featured)
+  .sort((a, b) => a.data.order - b.data.order);
+---
+
+<section id="projects" class="canvas border-t border-white/10 py-28 md:py-40">
+  <div class="reveal mb-20 flex flex-col justify-between md:mb-28 md:flex-row md:items-end">
+    <div class="max-w-xl space-y-3">
+      <span class="eyebrow">{tr['projects.eyebrow']}</span>
+      <h3 class="text-3xl font-semibold tracking-tighter text-ink sm:text-5xl">
+        {tr['projects.title']}
+      </h3>
+    </div>
+    <p class="mt-4 max-w-md text-base leading-relaxed text-subtle md:mt-0 md:text-lg">
+      {tr['projects.lede']}
+    </p>
+  </div>
+
+  <div class="space-y-24 md:space-y-36">
+    {
+      projects.map((project, i) => (
+        /*
+          Two nested elements on purpose. A CSS animation outranks an inline
+          style, so the scroll reveal and the pointer tilt cannot both write
+          `transform` on the same element. The wrapper takes the reveal, the
+          article beneath it owns the tilt, and .tilt-inner lifts the columns
+          forward in Z so the tilt reads as depth rather than a flat skew.
+        */
+        <div class="reveal">
+          <article class="tilt group grid grid-cols-1 items-start gap-12 rounded-2xl border border-transparent pt-12 md:pt-16 lg:grid-cols-12 lg:gap-16">
+            <div class="tilt-inner space-y-6 lg:col-span-5">
+              <div class="flex flex-wrap items-center gap-2.5 font-mono text-xs text-subtle">
+                <span class="font-medium tracking-wider uppercase">
+                  <span class="text-accent">{String(i + 1).padStart(2, '0')}</span>
+                  <span class="text-ink"> / {project.data.category}</span>
+                </span>
+                <span>â€¢</span>
+                <span>{project.data.year}</span>
+                <span>â€¢</span>
+                <span>{project.data.platform}</span>
+              </div>
+  
+              <div class="space-y-2">
+                <h4 class="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+                  {project.data.title}
+                </h4>
+                <p class="font-mono text-xs tracking-wider text-subtle uppercase">
+                  {project.data.role}
+                </p>
+              </div>
+  
+              <p class="text-sm leading-relaxed text-subtle md:text-base">
+                {project.data.summary}
+              </p>
+  
+              {/* Key metrics */}
+              <div class="grid grid-cols-3 gap-4 border-y border-white/6 py-4">
+                {project.data.metrics.map((metric, m) => (
+                  <div class:list={[m > 0 && 'border-l border-white/10 pl-4']}>
+                    <span class="block font-mono text-2xl font-semibold tracking-tight text-ink">
+                      {metric.value}
+                    </span>
+                    <span class="mt-0.5 block font-mono text-[11px] tracking-wider text-subtle uppercase">
+                      {metric.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+  
+              <ul class="space-y-2 text-xs text-subtle md:text-sm">
+                {project.data.highlights.map((item) => (
+                  <li class="flex items-start gap-2.5">
+                    <span class="font-mono text-white/40">â€”</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+  
+              <div class="flex flex-wrap gap-2 pt-2">
+                {project.data.stack.map((tech) => (
+                  <span class="tag">{tech}</span>
+                ))}
+              </div>
+  
+              <div class="flex items-center gap-4 pt-4">
+                <a
+                  href={localePath(locale, `/projects/${project.id}`)}
+                  class="btn-primary btn-sm"
+                >
+                  {tr['projects.viewCase']}
+                  <span aria-hidden="true">â†—</span>
+                </a>
+                {project.data.links[0] && (
+                  <a href={project.data.links[0].href} class="btn-ghost btn-sm" target="_blank" rel="noopener noreferrer">
+                    {project.data.links[0].label}
+                    <span aria-hidden="true">â†—</span>
+                  </a>
+                )}
+              </div>
+            </div>
+  
+              {/* Screenshot panel, dressed in the design's frame chrome */}
+              <div class="tilt-inner lg:col-span-7">
+                <figure
+                  class="relative space-y-4 overflow-hidden rounded-2xl border border-white/10 bg-surface p-5 transition-colors duration-300 group-hover:border-accent/25 md:p-7"
+                >
+                  <div class="flex items-center justify-between border-b border-white/6 pb-4">
+                    <div class="flex items-center gap-2">
+                      <span class="size-2 rounded-full bg-white/30"></span>
+                      <span class="size-2 rounded-full bg-white/15"></span>
+                      <span class="size-2 rounded-full bg-white/15"></span>
+                    </div>
+                    <span class="font-mono text-[11px] tracking-wider text-muted uppercase">
+                      {project.data.panelLabel}
+                    </span>
+                  </div>
+
+                  <BlurImage
+                    src={project.data.cover}
+                    lqip={project.data.lqip}
+                    alt={project.data.coverAlt}
+                    widths={[640, 1000, 1400]}
+                    sizes="(min-width: 1024px) 42rem, 100vw"
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                    objectPosition={project.data.coverPosition}
+                    imgClass={[
+                      'transition-transform duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:scale-[1.03]',
+                      project.data.coverFit === 'contain'
+                        ? 'max-h-[28rem] object-contain'
+                        : 'aspect-[16/10] object-cover',
+                    ].join(' ')}
+                  />
+                </figure>
+              </div>
+            </article>
+        </div>
+      ))
+    }
+  </div>
+</section>

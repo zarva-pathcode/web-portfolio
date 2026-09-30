@@ -1,0 +1,661 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+
+@import '@fontsource-variable/inter';
+
+/*
+ * Apple Minimalist — the visual language of the approved Stitch screens.
+ * Pure black canvas and a single typeface. Structure is carried by hairline
+ * rules and generous vertical rhythm rather than by boxes; the only chroma is
+ * --color-accent, reserved for interaction feedback and index markers.
+ */
+@theme {
+  --color-canvas: #000000;
+  --color-surface: #0a0a0c;
+  --color-ink: #f5f5f7;
+  --color-subtle: #86868b;
+  --color-muted: #6e6e73;
+
+  /*
+   * The only chroma on the site. Reserved for interaction feedback and index
+   * markers — never for body copy, surfaces, or section backgrounds. It is
+   * deliberately kept under roughly 3% of any viewport.
+   */
+  --color-accent: #38bdf8;
+  --color-accent-wash: #e0f2fe;
+
+  --font-sans:
+    'Inter Variable', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
+    system-ui, sans-serif;
+
+  --tracking-tighter: -0.04em;
+  --tracking-tight: -0.02em;
+  --tracking-wide: 0.04em;
+  --tracking-widest: 0.12em;
+
+  /*
+   * Motion system — one language for the whole site. Every effect samples from
+   * these four values so nothing drifts into its own timing.
+   */
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-hover: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-enter: 900ms;
+  --dur-hover: 250ms;
+  --stagger: 90ms;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    /* clears the fixed h-14 bar when jumping to a section anchor */
+    scroll-padding-top: 5rem;
+    background-color: var(--color-canvas);
+    color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: var(--color-ink);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+  }
+
+  ::selection {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-canvas);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #262628;
+    border-radius: 9999px;
+    border: 2px solid var(--color-canvas);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3a3a3d;
+  }
+}
+
+@layer components {
+  /* Page container — the design pins content to max-w-6xl with 24px gutters. */
+  .canvas {
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: 1.5rem;
+  }
+
+  /* Frosted nav bar: black 75% + 24px blur + 180% saturate. */
+  .apple-glass {
+    background-color: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  /*
+   * Only the two paint properties are animated — backdrop-filter stays on at
+   * all times, which is imperceptible against a black hero and avoids the
+   * interpolation jank a filter keyframe would cause. Longhand, see the note
+   * above the reveal block.
+   */
+  .nav-condense {
+    animation-name: nav-condense;
+    animation-duration: auto;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: scroll(root block);
+    animation-range: 0 120px;
+  }
+
+  @keyframes nav-condense {
+    from {
+      background-color: rgba(0, 0, 0, 0);
+      border-bottom-color: rgba(255, 255, 255, 0);
+    }
+    to {
+      background-color: rgba(0, 0, 0, 0.75);
+      border-bottom-color: rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  /* Section eyebrow — the mono, uppercase, wide-tracked micro-label. */
+  .eyebrow {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-subtle);
+  }
+
+  .hairline-b {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .hairline-t {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .hairline-l {
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  
+  /* Inline pill used for tech tags in editorial grids. */
+  .tag {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: var(--color-subtle);
+    background-color: rgba(255, 255, 255, 0.04);
+    border-radius: 4px;
+    padding: 0.25rem 0.625rem;
+  }
+
+  /* Outlined pill used for tags in the experience timeline. */
+  .tag-outline {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: var(--color-subtle);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    padding: 0.25rem 0.625rem;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    background-color: var(--color-ink);
+    color: #000;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 9999px;
+    padding: 0.75rem 1.5rem;
+    transition:
+      background-color var(--dur-hover) var(--ease-hover),
+      border-color var(--dur-hover) var(--ease-hover),
+      box-shadow var(--dur-hover) var(--ease-hover);
+  }
+  .btn-primary:hover {
+    background-color: var(--color-accent-wash);
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.28);
+  }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    background-color: rgba(255, 255, 255, 0.04);
+    color: var(--color-ink);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 9999px;
+    padding: 0.75rem 1.5rem;
+    transition:
+      background-color var(--dur-hover) var(--ease-hover),
+      border-color var(--dur-hover) var(--ease-hover);
+  }
+  .btn-ghost:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: color-mix(in srgb, var(--color-accent) 35%, transparent);
+  }
+
+  .btn-sm {
+    font-size: 0.75rem;
+    padding: 0.625rem 1.25rem;
+  }
+
+  .prose-invert {
+    --tw-prose-body: #86868b;
+    --tw-prose-headings: #f5f5f7;
+    --tw-prose-lead: #a1a1a6;
+    --tw-prose-links: #f5f5f7;
+    --tw-prose-bold: #f5f5f7;
+    --tw-prose-counters: #6e6e73;
+    --tw-prose-bullets: #6e6e73;
+    --tw-prose-hr: rgba(255, 255, 255, 0.1);
+    --tw-prose-quotes: #f5f5f7;
+    --tw-prose-quote-borders: rgba(255, 255, 255, 0.3);
+    --tw-prose-code: #f5f5f7;
+    --tw-prose-pre-code: #a1a1a6;
+    --tw-prose-pre-bg: #0a0a0c;
+    --tw-prose-th-borders: rgba(255, 255, 255, 0.12);
+    --tw-prose-td-borders: rgba(255, 255, 255, 0.08);
+  }
+}
+
+@layer utilities {
+  /*
+   * IMPORTANT — scroll-driven animations must be declared with longhand
+   * properties, never the `animation` shorthand.
+   *
+   * The build's CSS minifier folds `animation-timeline` into the `animation`
+   * shorthand and emits it as e.g. `animation: linear both reveal-up view()`.
+   * Chromium rejects that as invalid, so the declaration is dropped silently:
+   * getAnimations() comes back empty and the element just sits at its rest
+   * value. The longhand form survives minification and produces a real
+   * ScrollTimeline. Keep the animation-* properties split.
+   */
+  .reveal {
+    animation-name: reveal-up;
+    animation-duration: auto;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 40%;
+  }
+
+  /*
+   * Sibling staggering. A section's direct children reveal one after another, so
+   * a grid of cards cascades instead of arriving as a single block. motion.ts
+   * sets the same `--reveal-i` values on the fallback path.
+   */
+  .reveal-group > * {
+    animation-name: reveal-up;
+    animation-duration: auto;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 45%;
+    animation-delay: calc(var(--reveal-i, 0) * 80ms);
+  }
+
+  /*
+   * Opacity-only reveal, for elements that also carry a pointer transform. A CSS
+   * animation beats an inline style, so an element driven by both has to give up
+   * one property; the transform belongs to the pointer, so the entrance is
+   * limited to fading.
+   */
+  .fade-only {
+    animation-name: reveal-fade;
+    animation-duration: auto;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 40%;
+  }
+
+  @keyframes reveal-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /*
+   * Scroll timelines are only widely available in Chromium. Everywhere else the
+   * element would sit at its rest value with no animation at all, so these are
+   * driven by motion.ts from a rAF loop reading getBoundingClientRect() instead.
+   */
+  @supports not (animation-timeline: view()) {
+    .reveal,
+    .reveal-group > * {
+      opacity: 0;
+      transform: translateY(1.75rem);
+      transition:
+        opacity 0.75s var(--ease-enter),
+        transform 0.75s var(--ease-enter);
+      transition-delay: calc(var(--reveal-i, 0) * 80ms);
+    }
+
+    .reveal.is-visible,
+    .reveal-group > .is-visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    .fade-only {
+      opacity: 0;
+      transition: opacity 0.75s var(--ease-enter);
+    }
+
+    .fade-only.is-visible {
+      opacity: 1;
+    }
+  }
+
+  @keyframes reveal-up {
+    from {
+      opacity: 0;
+      transform: translateY(1.75rem);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* --- Scroll-driven media motion -------------------------------------- */
+
+  /*
+   * The hero frame drifts slower than the page. It runs on the root scroller
+   * rather than a view() timeline: the hero is slightly shorter than the
+   * viewport, which leaves `exit` a degenerate ~60px window — too narrow to
+   * read. An explicit length range off the root scroller is both predictable and
+   * responsive.
+   */
+  .hero-parallax {
+    animation-name: hero-parallax;
+    animation-duration: auto;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: scroll(root block);
+    animation-range: 0 100vh;
+  }
+
+  @keyframes hero-parallax {
+    from {
+      transform: translate3d(0, 0, 0);
+    }
+    to {
+      transform: translate3d(0, 5rem, 0);
+    }
+  }
+
+  /*
+   * Hero entrance. The backdrop settles from a slight over-scale while fading in,
+   * which reads as a camera pulling back rather than a plain fade.
+   */
+  @keyframes hero-intro {
+    from {
+      opacity: 0;
+      transform: scale(1.08);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .hero-intro {
+    animation: hero-intro 0.9s var(--ease-enter) both;
+  }
+
+  /* --- Pointer-driven depth ------------------------------------------------ */
+
+  /*
+   * 3D tilt on the featured-project rows. `--tilt-x` / `--tilt-y` are written by
+   * motion.ts from pointer position; the reset on pointer-leave is a plain
+   * transition on the custom properties, so the card eases back on its own.
+   */
+  .tilt {
+    transform: perspective(1400px) rotateX(var(--tilt-x, 0deg))
+      rotateY(var(--tilt-y, 0deg)) translateZ(0);
+    transform-style: preserve-3d;
+    transition:
+      transform 0.4s var(--ease-hover),
+      border-color 0.4s var(--ease-hover);
+  }
+
+  .tilt[data-active] {
+    transition: border-color 0.4s var(--ease-hover);
+  }
+
+  .tilt[data-active][data-hot] {
+    border-color: rgba(56, 189, 248, 0.42);
+  }
+
+  .tilt-inner {
+    transform: translateZ(28px);
+  }
+
+  /*
+   * Cursor follower. A dot that trails the real pointer with a lerp, expanding
+   * into a ring over interactive elements. Hidden on touch devices and under
+   * reduced motion, where there is no pointer to follow in the first place.
+   */
+  .cursor-dot {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 60;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin: -0.25rem 0 0 -0.25rem;
+    border-radius: 9999px;
+    background-color: var(--color-accent);
+    pointer-events: none;
+    opacity: 0;
+    transition:
+      opacity 0.3s var(--ease-hover),
+      width 0.32s var(--ease-hover),
+      height 0.32s var(--ease-hover),
+      margin 0.32s var(--ease-hover),
+      background-color 0.32s var(--ease-hover);
+  }
+
+  .cursor-dot[data-visible] {
+    opacity: 1;
+  }
+
+  .cursor-dot[data-grow] {
+    width: 2.5rem;
+    height: 2.5rem;
+    margin: -1.25rem 0 0 -1.25rem;
+    background-color: transparent;
+    box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.55);
+  }
+
+  @media (hover: none) {
+    .cursor-dot {
+      display: none;
+    }
+  }
+
+  /* The experience spine draws downward as the timeline is read. */
+  .spine-draw {
+    transform-origin: top;
+    animation-name: spine-draw;
+    animation-duration: auto;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: view();
+    animation-range: entry 10% cover 60%;
+  }
+
+  @keyframes spine-draw {
+    from {
+      transform: scaleY(0);
+    }
+    to {
+      transform: scaleY(1);
+    }
+  }
+
+  /* Read progress hairline, pinned to the bottom edge of the bar. */
+  .scroll-progress {
+    transform-origin: left;
+    animation-name: scroll-progress;
+    animation-duration: auto;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: scroll(root block);
+  }
+
+  @keyframes scroll-progress {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+
+  /* --- Entrance: headline words, split at build time -------------------- */
+
+  .word-mask {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: bottom;
+  }
+
+  .word {
+    display: inline-block;
+    animation: word-in var(--dur-enter) var(--ease-enter) both;
+    animation-delay: calc(var(--i) * var(--stagger));
+  }
+
+  /*
+   * Each word rises out of its mask with a slight rotation and overshoot, so the
+   * headline reads as a sequence rather than a single fade. The overshoot is
+   * carried by an intermediate keyframe at 62% because `to` is a pure rest state.
+   */
+  @keyframes word-in {
+    from {
+      transform: translateY(130%) rotate(4deg);
+    }
+    62% {
+      transform: translateY(-8%) rotate(-1deg);
+    }
+    to {
+      transform: translateY(0) rotate(0);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  /*
+   * Time-based animations are safe to simply shorten. Scroll-driven ones are
+   * not: they have no duration to shorten, and collapsing them would freeze the
+   * element wherever the scroll position happened to be. So they are switched
+   * off outright and pinned to their rest state instead.
+   */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .reveal,
+  .reveal-group > *,
+  .fade-only {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .hero-parallax,
+  .hero-intro {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  /* Restores the pre-redesign framing, which covered the full width. */
+  .hero-intro {
+    width: 100%;
+  }
+
+  .tilt,
+  .tilt-inner {
+    transform: none !important;
+  }
+
+  .cursor-dot {
+    display: none !important;
+  }
+
+  .spine-draw {
+    animation: none !important;
+    transform: scaleY(1) !important;
+  }
+
+  .nav-condense {
+    animation: none !important;
+    background-color: rgba(0, 0, 0, 0.75) !important;
+    border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .scroll-progress {
+    animation: none !important;
+    display: none !important;
+  }
+
+  .word {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+/* ---------- Print: /cv becomes a clean A4 document ---------- */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 14mm 12mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-plain,
+  .print-plain * {
+    color: #111 !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .print-plain .print-dot {
+    background-color: #555 !important;
+  }
+
+  .print-plain [class*='border-white'] {
+    border-color: #d4d4d4 !important;
+  }
+
+  a {
+    text-decoration: none;
+  }
+
+  /* Outranks `.print-plain *` (0,1,0) so headings print pure black, not #111. */
+  .print-plain h1,
+  .print-plain h2,
+  .print-plain h3,
+  .print-plain h4,
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: #000 !important;
+  }
+}

@@ -1,0 +1,158 @@
+---
+import { site } from '../data/site';
+import { t, type Locale } from '../i18n';
+
+// TODO: ganti dengan access key asli dari web3forms.com
+const WEB3FORMS_KEY = 'YOUR_ACCESS_KEY_HERE';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const tr = t(locale);
+---
+
+<section id="contact-form" class="canvas border-t border-white/10 py-28 md:py-40">
+  <div class="reveal grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
+    <div class="lg:col-span-5">
+      <span class="eyebrow">{tr['contact.index']}</span>
+      <h2 class="mt-4 text-3xl font-semibold tracking-tighter text-ink sm:text-5xl md:text-6xl">
+        {tr['contact.title']}
+      </h2>
+      <p class="mt-6 max-w-md text-base leading-relaxed text-subtle md:text-lg">
+        {tr['contact.lede']}
+      </p>
+
+      <a
+        href={`mailto:${site.email}`}
+        class="mt-10 block break-all text-lg font-semibold tracking-tight text-ink transition-opacity hover:opacity-80 sm:text-xl"
+      >
+        {site.email}
+      </a>
+      <p class="mt-2 text-sm text-subtle">{site.location}</p>
+    </div>
+
+    <div class="lg:col-span-7">
+      <form
+        id="contact"
+        class="flex flex-col gap-4"
+        action="https://api.web3forms.com/submit"
+        method="POST"
+        data-busy={tr['contact.sending']}
+        data-ok={tr['contact.success']}
+        data-error={tr['contact.error']}
+        data-inactive={tr['contact.error']}
+      >
+        <input type="hidden" name="access_key" value={WEB3FORMS_KEY} />
+        <input type="hidden" name="subject" value={`New message from ${site.name}`} />
+        <input type="hidden" name="from_name" value={site.name} />
+        <input type="hidden" name="redirect" value="false" />
+
+        <div class="absolute -left-[9999px]" aria-hidden="true">
+          <label for="botcheck">Don't fill this out</label>
+          <input type="text" id="botcheck" name="botcheck" tabindex="-1" autocomplete="off" />
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="flex flex-col gap-2">
+            <span class="eyebrow">{tr['contact.name']}</span>
+            <input
+              type="text"
+              name="name"
+              required
+              autocomplete="name"
+              class="rounded-lg border border-white/10 bg-surface px-4 py-3 text-sm text-ink transition-colors focus:border-white/30 focus:outline-none"
+            />
+          </label>
+
+          <label class="flex flex-col gap-2">
+            <span class="eyebrow">{tr['contact.email']}</span>
+            <input
+              type="email"
+              name="email"
+              required
+              autocomplete="email"
+              class="rounded-lg border border-white/10 bg-surface px-4 py-3 text-sm text-ink transition-colors focus:border-white/30 focus:outline-none"
+            />
+          </label>
+        </div>
+
+        <label class="flex flex-col gap-2">
+          <span class="eyebrow">{tr['contact.message']}</span>
+          <textarea
+            name="message"
+            rows="5"
+            required
+            class="resize-y rounded-lg border border-white/10 bg-surface px-4 py-3 text-sm text-ink transition-colors focus:border-white/30 focus:outline-none"></textarea>
+        </label>
+
+        <div class="flex flex-wrap items-center gap-4">
+          <button type="submit" class="btn-primary" disabled>
+            <span data-label>{tr['contact.send']}</span>
+            <span aria-hidden="true">↗</span>
+          </button>
+          <p
+            data-status
+            role="status"
+            aria-live="polite"
+            class="text-sm text-subtle opacity-0 transition-opacity"
+          >
+          </p>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  const form = document.getElementById('contact') as HTMLFormElement | null;
+  const status = document.querySelector<HTMLElement>('[data-status]');
+  const label = document.querySelector<HTMLElement>('[data-label]');
+  const button = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
+
+  const idle = label?.textContent ?? '';
+  const busy = form?.dataset.busy ?? '';
+  const ok = form?.dataset.ok ?? '';
+  const err = form?.dataset.error ?? '';
+  const inactive = form?.dataset.inactive ?? err;
+
+  const say = (message: string) => {
+    if (!status) return;
+    status.textContent = message;
+    status.classList.remove('opacity-0');
+  };
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!form || !button) return;
+
+    const key = (form.elements.namedItem('access_key') as HTMLInputElement)?.value;
+    if (!key || key.startsWith('YOUR_')) {
+      say(inactive);
+      return;
+    }
+
+    button.disabled = true;
+    if (label) label.textContent = busy;
+
+    try {
+      const response = await fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { Accept: 'application/json' },
+      });
+      const result = await response.json();
+      if (result.success) {
+        form.reset();
+        say(ok);
+      } else {
+        say(err);
+      }
+    } catch {
+      say(err);
+    } finally {
+      button.disabled = false;
+      if (label) label.textContent = idle;
+    }
+  });
+</script>

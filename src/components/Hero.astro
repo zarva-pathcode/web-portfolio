@@ -1,0 +1,101 @@
+---
+import { Image } from 'astro:assets';
+import { site, heroDisciplines } from '../data/site';
+import { t, type Locale } from '../i18n';
+import heroImage from '../assets/bg-image.png';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const tr = t(locale);
+
+// Split at build time so the word-stagger costs no runtime JS.
+const words = tr['hero.headline'].split(' ');
+---
+
+<section
+  id="hero"
+  class="relative flex min-h-[94vh] flex-col justify-between overflow-hidden bg-canvas pt-28 pb-12"
+>
+  <!--
+    The backdrop keeps its full colour at rest. Two nested frames, because the
+    entrance and the parallax both animate `transform` and would otherwise
+    overwrite each other: .hero-intro is the time-based settle on load (inner),
+    .hero-parallax is the scroll-driven drift on the outer one. motion.ts mirrors
+    the same offset in browsers that lack `animation-timeline`.
+  -->
+  <div
+    class="hero-parallax pointer-events-none absolute inset-0 z-0 flex select-none items-center justify-end overflow-hidden"
+  >
+    <div
+      class="hero-intro relative h-full w-full overflow-hidden opacity-45 lg:w-3/5 lg:opacity-90"
+    >
+      <Image
+        src={heroImage}
+        alt={site.name}
+        widths={[720, 1080, 1440]}
+        sizes="(min-width: 1024px) 60vw, 100vw"
+        loading="eager"
+        fetchpriority="high"
+        class="h-full w-full scale-105 object-cover object-center will-change-transform"
+      />
+      <div class="absolute inset-0 bg-linear-to-r from-black via-black/70 to-transparent"></div>
+      <div class="absolute inset-0 bg-linear-to-t from-black via-transparent to-black/70"></div>
+    </div>
+  </div>
+
+  <!-- Headline block -->
+  <div class="relative z-10 my-auto w-full px-6 pt-16 md:pt-24 md:pl-[max(1.5rem,calc((100vw-72rem)/2+1.5rem))]">
+    <div class="max-w-3xl">
+      <div class="mb-8 inline-flex items-center gap-2.5">
+        <span class="font-mono text-xs font-medium tracking-widest text-subtle uppercase">
+          {site.name}
+        </span>
+        <span class="text-white/20">•</span>
+        <span class="font-mono text-xs text-subtle">Portfolio ©2026</span>
+      </div>
+
+      <h1
+        class="text-4xl leading-[1.03] font-semibold tracking-tighter text-ink sm:text-6xl md:text-7xl"
+      >
+        {
+          words.map((word, i) => (
+            <span class="word-mask">
+              <span class="word" style={`--i:${i}`}>
+                {word}
+                {i < words.length - 1 && ' '}
+              </span>
+            </span>
+          ))
+        }
+      </h1>
+
+      <p class="mt-8 max-w-2xl text-lg leading-relaxed font-normal text-subtle md:text-xl">
+        {tr['hero.sub']}
+      </p>
+
+      <div class="mt-10 flex flex-wrap items-center gap-4">
+        <a href="#projects" class="btn-primary">
+          {tr['hero.ctaPrimary']}
+        </a>
+        <a href="#contact" class="btn-ghost">{tr['hero.ctaSecondary']}</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Discipline strip -->
+  <div class="relative z-10 mx-6 mt-20 md:mt-28 md:mx-auto md:w-full md:max-w-[calc(72rem-3rem)]">
+    <div class="reveal-group grid grid-cols-2 gap-8 border-t border-white/10 pt-8 md:grid-cols-4">
+      {
+        heroDisciplines.map((item) => (
+          <div class="space-y-1.5">
+            <span class="block font-mono text-[11px] tracking-widest text-muted">{item.index}</span>
+            <p class="text-sm font-medium tracking-tight text-ink">{item.title}</p>
+            <p class="text-xs text-subtle">{item.sub}</p>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>

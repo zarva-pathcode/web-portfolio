@@ -1,0 +1,182 @@
+---
+import { site, nav } from '../data/site';
+import { t, localePath, type Locale } from '../i18n';
+
+const locale: Locale = Astro.url.pathname.startsWith('/id') ? 'id' : 'en';
+const tr = t(locale);
+
+/** CV is the only item that navigates away from the page. */
+const isRoute = (href: string) => href === 'cv';
+---
+
+<header class="no-print apple-glass nav-condense fixed inset-x-0 top-0 z-50">
+  <nav class="canvas flex h-14 items-center justify-between" aria-label="Primary">
+    <a
+      href={localePath(locale, '/')}
+      class="flex items-center gap-1.5 text-sm font-semibold tracking-tight text-ink transition-opacity hover:opacity-80"
+    >
+      <span>Zarvaism</span>
+      <span class="inline-block size-1 rounded-full bg-white/70"></span>
+    </a>
+
+    <ul class="hidden items-center gap-8 text-[13px] text-subtle md:flex">
+      {
+        nav.map((item) => (
+          <li>
+            {isRoute(item.href) ? (
+              <a
+                href={localePath(locale, item.href)}
+                class="transition-colors duration-200 hover:text-ink"
+              >
+                {item.label}
+              </a>
+            ) : (
+              <a
+                href={locale === 'id' ? `/${item.href.replace('#', '#')}` : item.href}
+                data-nav={item.href}
+                class="transition-colors duration-200 hover:text-ink"
+              >
+                {item.label}
+              </a>
+            )}
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="flex items-center gap-3">
+      <a
+        href={locale === 'id' ? '/id' : '/'}
+        hreflang={locale === 'id' ? 'en' : 'id'}
+        class="hidden text-xs text-subtle transition-colors hover:text-ink sm:block"
+      >
+        {locale === 'id' ? 'EN' : 'ID'}
+      </a>
+
+      <a
+        href={localePath(locale, '/#contact')}
+        class="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/8 px-4 py-1.5 text-xs font-medium text-ink/90 transition-all duration-200 hover:border-accent/40 hover:bg-white/16"
+      >
+        {tr['contact.index']}
+      </a>
+
+      <button
+        type="button"
+        id="nav-toggle"
+        class="-mr-1 grid size-8 place-items-center text-subtle transition-colors hover:text-ink md:hidden"
+        aria-expanded="false"
+        aria-controls="nav-panel"
+        aria-label={tr['nav.menu']}
+      >
+        <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+          <path class="nav-open" d="M4 7h16M4 12h16M4 17h16" />
+          <path class="nav-close hidden" d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <div
+    id="nav-panel"
+    class="hidden border-t border-white/8 bg-black/90 backdrop-blur-2xl md:hidden"
+    data-state="closed"
+  >
+    <ul class="canvas flex flex-col py-2 text-sm text-subtle">
+      {
+        nav.map((item) => (
+          <li>
+            {isRoute(item.href) ? (
+              <a href={localePath(locale, item.href)} class="block py-2.5 transition-colors hover:text-ink">
+                {item.label}
+              </a>
+            ) : (
+              <a
+                href={locale === 'id' ? `/${item.href}` : item.href}
+                data-nav={item.href}
+                class="block py-2.5 transition-colors hover:text-ink"
+              >
+                {item.label}
+              </a>
+            )}
+          </li>
+        ))
+      }
+      <li>
+        <a href={localePath(locale, '/blog')} class="block py-2.5 transition-colors hover:text-ink">
+          {tr['blog.index']}
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Read progress, driven entirely by scroll() so it costs no JS. -->
+  <div class="pointer-events-none absolute inset-x-0 bottom-0 h-px" aria-hidden="true">
+    <div class="scroll-progress h-px w-full bg-accent/50"></div>
+  </div>
+</header>
+
+<script>
+  /**
+   * Everything below is bound per-render. With <ClientRouter /> the header is
+   * replaced on every navigation, so the whole thing has to re-run afterwards
+   * or the scroll-spy and the mobile menu stop responding.
+   */
+  function initNav() {
+    const btn = document.getElementById('nav-toggle');
+    const drawer = document.getElementById('nav-panel');
+    const open = btn?.querySelector('.nav-open');
+    const close = btn?.querySelector('.nav-close');
+
+    btn?.addEventListener('click', () => {
+      if (!drawer || !btn) return;
+      const next = drawer.classList.contains('hidden');
+      drawer.classList.toggle('hidden', !next);
+      btn.setAttribute('aria-expanded', String(next));
+      open?.classList.toggle('hidden', next);
+      close?.classList.toggle('hidden', !next);
+    });
+
+    // Scroll-spy: highlight the last section whose top has passed the reading
+    // line. A scroll handler is used rather than IntersectionObserver because
+    // the answer depends on section *order* relative to a line, not on overlap.
+    const links = [...document.querySelectorAll<HTMLAnchorElement>('[data-nav]')];
+    const sections = links
+      .map((link) => document.querySelector<HTMLElement>(link.dataset.nav ?? ''))
+      .filter((el): el is HTMLElement => Boolean(el));
+
+    if (!sections.length) return;
+
+    let current = '';
+
+    const sync = () => {
+      const line = window.scrollY + window.innerHeight * 0.35;
+      let active = sections[0].id;
+      for (const section of sections) {
+        if (section.offsetTop <= line) active = section.id;
+      }
+
+      // At the foot of the page force the last section on: short trailing
+      // sections may never cross the reading line.
+      if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 8) {
+        active = sections[sections.length - 1].id;
+      }
+
+      if (active === current) return;
+      current = active;
+
+      for (const link of links) {
+        const isOn = link.dataset.nav === `#${active}`;
+        // The accent marks position in the page — nothing else in the bar.
+        link.classList.toggle('text-accent', isOn);
+        link.classList.toggle('text-subtle', !isOn);
+      }
+    };
+
+    sync();
+    window.addEventListener('scroll', sync, { passive: true });
+    window.addEventListener('resize', sync);
+  }
+
+  initNav();
+  document.addEventListener('astro:page-load', initNav);
+</script>

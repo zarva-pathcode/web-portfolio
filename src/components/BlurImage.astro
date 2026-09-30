@@ -1,0 +1,80 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import { placeholders } from '../data/placeholders';
+
+interface Props {
+  src: ImageMetadata;
+  /** Key into the generated placeholder map. Omit for no blur-up. */
+  lqip?: string;
+  alt: string;
+  widths: number[];
+  sizes: string;
+  loading?: 'lazy' | 'eager';
+  fetchpriority?: 'high' | 'low' | 'auto';
+  /** Extra classes on the <img> itself (object-fit, rounding, hover zoom). */
+  imgClass?: string;
+  objectPosition?: string;
+  class?: string;
+}
+
+const {
+  src,
+  lqip,
+  alt,
+  widths,
+  sizes,
+  loading = 'lazy',
+  fetchpriority,
+  imgClass = '',
+  objectPosition,
+  class: className = '',
+} = Astro.props;
+
+const placeholder = lqip ? placeholders[lqip] : undefined;
+---
+
+<div
+  class:list={['blur-up relative', className]}
+  data-blur-wrap
+  style={placeholder ? `--lqip:url("${placeholder}")` : undefined}
+>
+  <Image
+    src={src}
+    alt={alt}
+    widths={widths}
+    sizes={sizes}
+    loading={loading}
+    fetchpriority={fetchpriority}
+    data-blur-img
+    class:list={['block w-full', imgClass]}
+    style={objectPosition ? `object-position:${objectPosition}` : undefined}
+  />
+</div>
+
+<style>
+  /* ::before rather than a child element, so nothing can disturb image flow. */
+  .blur-up::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: var(--lqip);
+    background-size: cover;
+    background-position: center;
+    opacity: 1;
+    transition: opacity 450ms var(--ease-enter);
+  }
+
+  .blur-up [data-blur-img] {
+    opacity: 0;
+    transition: opacity 450ms var(--ease-enter);
+  }
+
+  .blur-up[data-loaded]::before {
+    opacity: 0;
+  }
+
+  .blur-up[data-loaded] [data-blur-img] {
+    opacity: 1;
+  }
+</style>

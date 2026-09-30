@@ -1,0 +1,101 @@
+---
+import BlurImage from './BlurImage.astro';
+import profilePic from '../assets/profile-pic.png';
+import { site, keyNumbers } from '../data/site';
+import { t, type Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const tr = t(locale);
+---
+
+  <section id="about" class="canvas border-t border-white/10 py-28 md:py-40">
+    <div class="reveal max-w-4xl">
+      <span class="eyebrow">{tr['about.index']}</span>
+    <h2 class="mt-4 text-3xl leading-tight font-semibold tracking-tighter text-ink sm:text-5xl md:text-6xl">
+      {tr['about.title']}
+    </h2>
+  </div>
+
+  <!-- Narrative + key numbers -->
+  <div class="reveal mt-16 grid grid-cols-1 items-start gap-12 border-b border-white/10 pb-20 lg:grid-cols-12 lg:gap-16 md:mt-24">
+    <div class="space-y-6 lg:col-span-7">
+      <p class="text-lg leading-relaxed font-light text-subtle md:text-2xl">
+        {tr['about.body']}
+      </p>
+      <p class="text-base leading-relaxed font-normal text-subtle md:text-lg">
+        {tr['about.body2']}
+      </p>
+    </div>
+
+    <div class="grid grid-cols-3 gap-6 pt-4 lg:col-span-5 lg:pt-2">
+      {
+        keyNumbers.map((n) => (
+          <div class="border-l border-white/10 pl-5">
+            <span class="block text-4xl font-semibold tracking-tighter text-ink sm:text-5xl">
+              {n.value}
+            </span>
+            <span class="mt-2 block font-mono text-xs tracking-wider text-subtle uppercase">
+              {n.label}
+            </span>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+
+  <!-- Portrait showcase -->
+  <div class="reveal grid grid-cols-1 items-center gap-12 pt-16 lg:grid-cols-12 md:pt-24">
+    <div class="space-y-6 lg:col-span-5">
+      <div class="inline-flex items-center gap-2">
+        <span class="size-2 rounded-full bg-accent"></span>
+        <span class="eyebrow">{tr['about.subhead']}</span>
+      </div>
+      <h3 class="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+        {tr['about.subtitle']}
+      </h3>
+      <p class="text-sm leading-relaxed text-subtle md:text-base">{tr['about.subbody']}</p>
+
+      <div class="grid grid-cols-2 gap-6 pt-4 sm:grid-cols-3">
+        <div>
+          <p class="font-mono text-[11px] tracking-wider text-subtle uppercase">Focus</p>
+          <p class="mt-1 text-sm text-ink">{tr['about.focus']}</p>
+        </div>
+        <div>
+          <p class="font-mono text-[11px] tracking-wider text-subtle uppercase">Based</p>
+          <p class="mt-1 text-sm text-ink">{site.location}</p>
+        </div>
+        <div>
+          <p class="font-mono text-[11px] tracking-wider text-subtle uppercase">Status</p>
+          <p class="mt-1 text-sm text-ink">{tr['about.status']}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex justify-center lg:col-span-7 lg:justify-end">
+      <figure
+        class="relative w-full max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-surface"
+      >
+        <BlurImage
+          src={profilePic}
+          lqip="profile"
+          alt={`${site.name}, ${site.role}`}
+          widths={[420, 720, 900]}
+          sizes="(min-width: 1024px) 30rem, 100vw"
+          imgClass="object-cover"
+        />
+        {/*
+          Top and bottom scrims keep the lit studio backdrop from reading as a
+          bright rectangle, so the figure still floats on the black canvas while
+          the portrait keeps its own colours.
+        */}
+        <div
+          class="pointer-events-none absolute inset-0 bg-linear-to-t from-black via-black/25 to-black/70"
+        >
+        </div>
+      </figure>
+    </div>
+  </div>
+</section>

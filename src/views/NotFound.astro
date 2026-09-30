@@ -1,0 +1,25 @@
+---
+import Page from '../layouts/Page.astro';
+import { t, localePath, type Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const tr = t(locale);
+---
+
+<Page title={tr['error.404title']} description={tr['error.404body']}>
+  <div
+    class="canvas flex min-h-[70vh] flex-col items-center justify-center py-space-2xl text-center"
+  >
+    <p class="font-mono text-[11px] tracking-widest text-muted uppercase">404</p>
+    <h1 class="mt-5 text-4xl font-semibold tracking-tighter text-ink sm:text-5xl md:text-6xl">
+      {tr['error.404title']}
+    </h1>
+    <p class="mt-5 max-w-md text-base text-subtle">{tr['error.404body']}</p>
+    <a href={localePath(locale, '/')} class="btn-primary mt-10">
+      {tr['error.404cta']}
+    </a>
+  </div>
+</Page>

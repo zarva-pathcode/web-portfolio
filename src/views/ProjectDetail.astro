@@ -1,0 +1,178 @@
+---
+import { render } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+import BlurImage from '../components/BlurImage.astro';
+import Page from '../layouts/Page.astro';
+import { t, localePath, type Locale } from '../i18n';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  locale: Locale;
+  next?: { id: string; title: string };
+}
+
+const { project, locale, next } = Astro.props;
+const tr = t(locale);
+const { Content } = await render(project);
+
+const blocks = [
+  { label: tr['projects.problem'], body: project.data.problem },
+  { label: tr['projects.approach'], body: project.data.approach },
+  { label: tr['projects.result'], body: project.data.result },
+] as const;
+---
+
+<Page
+  title={`${project.data.title} — ${project.data.role}`}
+  description={project.data.summary}
+>
+  <article class="canvas py-20 md:py-28">
+    <a
+      href={localePath(locale, '/#projects')}
+      class="group inline-flex items-center gap-2 text-sm text-subtle transition-colors hover:text-ink"
+    >
+      <svg viewBox="0 0 24 24" class="size-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5M11 18l-6-6 6-6" />
+      </svg>
+      {tr['projects.back']}
+    </a>
+
+    <header class="mt-12 grid grid-cols-1 gap-10 border-b border-white/10 pb-14 lg:grid-cols-12 lg:gap-16">
+      <div class="lg:col-span-7">
+        <div class="flex flex-wrap items-center gap-2.5 font-mono text-xs text-subtle">
+          <span class="font-medium tracking-wider uppercase">
+            <span class="text-accent">{project.data.year}</span>
+            <span class="text-ink"> · {project.data.category}</span>
+          </span>
+          <span>•</span>
+          <span>{project.data.platform}</span>
+        </div>
+        <h1 class="mt-5 text-4xl font-semibold tracking-tighter text-ink sm:text-5xl md:text-6xl">
+          {project.data.title}
+        </h1>
+        <p class="mt-4 font-mono text-xs tracking-wider text-subtle uppercase">
+          {project.data.role}
+        </p>
+        <p class="mt-6 max-w-2xl text-base leading-relaxed text-subtle md:text-lg">
+          {project.data.summary}
+        </p>
+      </div>
+
+      <dl class="grid grid-cols-1 gap-6 lg:col-span-5 lg:border-l lg:border-white/10 lg:pl-10">
+        {
+          project.data.metrics.map((metric) => (
+            <div>
+              <dt class="font-mono text-2xl font-semibold tracking-tight text-ink">{metric.value}</dt>
+              <dd class="mt-0.5 font-mono text-[11px] tracking-wider text-subtle uppercase">
+                {metric.label}
+              </dd>
+            </div>
+          ))
+        }
+      </dl>
+    </header>
+
+    <figure class="mt-14 overflow-hidden rounded-2xl border border-white/10 bg-surface p-3 md:p-5">
+      <BlurImage
+        src={project.data.cover}
+        lqip={project.data.lqip}
+        alt={project.data.coverAlt}
+        widths={[720, 1280, 1920]}
+        sizes="(min-width: 1152px) 68rem, 100vw"
+        loading="eager"
+        fetchpriority="high"
+        objectPosition={project.data.coverPosition}
+        imgClass={[
+          project.data.coverFit === 'contain'
+            ? 'max-h-[70vh] object-contain'
+            : 'aspect-[16/10] object-cover',
+        ].join(' ')}
+      />
+    </figure>
+
+    <div class="mt-14 grid grid-cols-1 gap-10 border-b border-white/10 pb-14 lg:grid-cols-3 lg:gap-8">
+      {
+        blocks.map((block, i) => (
+          <div>
+            <span class="eyebrow">{String(i + 1).padStart(2, '0')}</span>
+            <h2 class="mt-3 text-xl font-semibold tracking-tight text-ink">{block.label}</h2>
+            <p class="mt-3 text-sm leading-relaxed text-subtle">{block.body}</p>
+          </div>
+        ))
+      }
+    </div>
+
+    {
+      project.data.highlights.length > 0 && (
+        <section class="mt-14">
+          <h2 class="eyebrow">{tr['projects.highlights']}</h2>
+          <ul class="mt-6 max-w-3xl space-y-2.5 text-sm text-subtle">
+            {project.data.highlights.map((item) => (
+              <li class="flex items-start gap-3">
+                <span class="mt-0.5 font-mono text-white/40">—</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    <section class="mt-14">
+      <h2 class="eyebrow">{tr['projects.stack']}</h2>
+      <div class="mt-6 flex flex-wrap gap-2">
+        {project.data.stack.map((tech) => (
+          <span class="tag">{tech}</span>
+        ))}
+      </div>
+    </section>
+
+    {
+      project.data.gallery.length > 0 && (
+        <section class="mt-14">
+          <h2 class="eyebrow">{tr['projects.gallery']}</h2>
+          <div class="mt-6 flex flex-col gap-5">
+            {project.data.gallery.map((shot) => (
+              <BlurImage
+                src={shot}
+                lqip="artiva-gallery"
+                alt={project.data.coverAlt}
+                widths={[720, 1280, 1920]}
+                sizes="(min-width: 1152px) 68rem, 100vw"
+                imgClass="rounded-2xl border border-white/10"
+              />
+            ))}
+          </div>
+        </section>
+      )
+    }
+
+    {
+      project.body && (
+        <div class="prose prose-invert reveal mt-14 max-w-3xl">
+          <Content />
+        </div>
+      )
+    }
+
+    {
+      next && (
+        <a
+          href={localePath(locale, `/projects/${next.id}`)}
+          class="group mt-16 flex flex-col gap-2 border-t border-white/10 pt-8"
+        >
+          <span class="eyebrow">{tr['projects.next']}</span>
+          <span class="flex items-center gap-2 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+            {next.title}
+            <span
+              class="inline-block text-subtle transition-transform group-hover:translate-x-1"
+              aria-hidden="true"
+            >
+              ↗
+            </span>
+          </span>
+        </a>
+      )
+    }
+  </article>
+</Page>

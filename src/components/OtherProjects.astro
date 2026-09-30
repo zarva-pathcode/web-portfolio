@@ -1,0 +1,50 @@
+---
+import { archive } from '../data/site';
+import { t, type Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const tr = t(locale);
+---
+
+<section id="archive" class="canvas border-t border-white/10 py-24 md:py-36">
+  <div class="mb-16 flex flex-col justify-between md:mb-20 md:flex-row md:items-end">
+    <div class="reveal max-w-xl space-y-3">
+      <span class="eyebrow">{tr['archive.eyebrow']}</span>
+      <h3 class="text-3xl font-semibold tracking-tighter text-ink sm:text-5xl">
+        {tr['archive.title']}
+      </h3>
+    </div>
+    <p class="mt-4 max-w-md text-base leading-relaxed text-subtle md:mt-0 md:text-lg">
+      {tr['archive.lede']}
+    </p>
+  </div>
+
+  <div class="divide-y divide-white/10 border-y border-white/10">
+    <div
+      class="hidden grid-cols-12 gap-4 py-4 font-mono text-xs tracking-widest text-muted uppercase md:grid"
+    >
+      <div class="col-span-1">{tr['archive.colYear']}</div>
+      <div class="col-span-3">{tr['archive.colProject']}</div>
+      <div class="col-span-3">{tr['archive.colCategory']}</div>
+      <div class="col-span-3">{tr['archive.colStack']}</div>
+      <div class="col-span-2 text-right">{tr['archive.colArtifact']}</div>
+    </div>
+
+    {
+      archive.map((row) => (
+        <div class="grid grid-cols-1 items-center gap-2 py-5 transition-colors duration-200 hover:bg-white/2 md:grid-cols-12 md:gap-4 md:py-4">
+          <div class="font-mono text-xs text-subtle md:col-span-1">{row.year}</div>
+          <div class="text-sm font-medium tracking-tight text-ink md:col-span-3">{row.project}</div>
+          <div class="text-xs text-subtle md:col-span-3">{row.category}</div>
+          <div class="font-mono text-xs text-subtle md:col-span-3">{row.stack}</div>
+          <div class="font-mono text-xs text-subtle md:col-span-2 md:text-right">
+            {row.artifact}
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</section>
