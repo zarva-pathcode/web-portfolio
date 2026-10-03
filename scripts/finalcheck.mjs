@@ -22,6 +22,14 @@ console.log('prefers-reduced-motion: reduce');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto(BASE + '/', { waitUntil: 'networkidle' });
   await page.waitForTimeout(700);
+  // Scroll past the hero before measuring. The portrait is `absolute` inside
+  // the section, so at scroll 0 it is fully on screen by design — asserting it
+  // is off-screen there would be asserting the opposite of the intent.
+  await page.evaluate(() => {
+    const heroBottom = document.getElementById('hero').getBoundingClientRect().bottom + scrollY;
+    window.scrollTo({ top: heroBottom, behavior: 'instant' });
+  });
+  await page.waitForTimeout(400);
   const r = await page.evaluate(() => {
     const g = (s) => {
       const el = document.querySelector(s);
@@ -29,7 +37,10 @@ console.log('prefers-reduced-motion: reduce');
     };
     return {
       heroFilter: g('.hero-parallax')?.filter,
-      heroTransform: g('.hero-parallax')?.transform,
+      heroBottom: (() => {
+        const el = document.querySelector('.hero-parallax');
+        return el ? Math.round(el.getBoundingClientRect().bottom) : null;
+      })(),
       spine: g('.spine-draw')?.transform,
       navBg: g('.nav-condense')?.backgroundColor,
       progressShown: g('.scroll-progress') ? getComputedStyle(document.querySelector('.scroll-progress')).display : 'n/a',
@@ -37,7 +48,12 @@ console.log('prefers-reduced-motion: reduce');
     };
   });
   ok('hero keeps its colour', !r.heroFilter.includes('grayscale'), r.heroFilter);
-  ok('no parallax', r.heroTransform === 'none' || /matrix\(1, 0, 0, 1, 0, 0\)/.test(r.heroTransform), r.heroTransform);
+  /*
+   * The portrait frame is `absolute` inside the hero, so it scrolls out with the
+   * section and reduced-motion visitors get the same page as everyone else. What
+   * must hold is that it is not painted over the lower sections.
+   */
+  ok('portrait scrolled away', r.heroBottom !== null && r.heroBottom <= 0, `bottom=${r.heroBottom}`);
   ok('spine fully drawn', r.spine.includes('matrix(1, 0, 0, 1'), r.spine);
   ok('nav shown as glass', r.navBg.includes('0.75'), r.navBg);
   ok('progress bar hidden', r.progressShown === 'none', r.progressShown);

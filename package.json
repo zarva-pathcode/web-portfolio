@@ -17,7 +17,9 @@
     "verify:motion": "node scripts/motioncheck.mjs",
     "verify:nav": "node scripts/navspy.mjs",
     "verify:vt": "node scripts/vtrancheck.mjs",
-    "verify": "node scripts/finalcheck.mjs",
+    "verify:interactions": "node scripts/verifyinteractions.mjs",
+    "verify:portrait": "node scripts/verifyportrait.mjs",
+    "verify:locale": "node scripts/verifylocale.mjs",
     "astro": "astro"
   },
   "dependencies": {

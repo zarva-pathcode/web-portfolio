@@ -15,6 +15,13 @@ interface Props {
   /** Extra classes on the <img> itself (object-fit, rounding, hover zoom). */
   imgClass?: string;
   objectPosition?: string;
+  /**
+   * Grows the image inside its own frame on row hover (port of the work-card
+   * zoom on heynesh.com). The wrapper is clipped, so the image scales past its
+   * own edges without spilling over the panel border. Purely decorative and
+   * desktop-only — see the media query in global.css.
+   */
+  zoom?: boolean;
   class?: string;
 }
 
@@ -28,6 +35,7 @@ const {
   fetchpriority,
   imgClass = '',
   objectPosition,
+  zoom = false,
   class: className = '',
 } = Astro.props;
 
@@ -35,7 +43,7 @@ const placeholder = lqip ? placeholders[lqip] : undefined;
 ---
 
 <div
-  class:list={['blur-up relative', className]}
+  class:list={['blur-up relative', zoom && 'zoom-frame', className]}
   data-blur-wrap
   style={placeholder ? `--lqip:url("${placeholder}")` : undefined}
 >

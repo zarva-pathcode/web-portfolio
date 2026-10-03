@@ -76,7 +76,7 @@ const tr = t(locale);
 
     <div class="flex justify-center lg:col-span-7 lg:justify-end">
       <figure
-        class="relative w-full max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-surface"
+        class="group/portrait relative w-full max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-surface"
       >
         <BlurImage
           src={profilePic}
@@ -85,6 +85,7 @@ const tr = t(locale);
           widths={[420, 720, 900]}
           sizes="(min-width: 1024px) 30rem, 100vw"
           imgClass="object-cover"
+          zoom
         />
         {/*
           Top and bottom scrims keep the lit studio backdrop from reading as a

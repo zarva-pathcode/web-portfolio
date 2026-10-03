@@ -1,15 +1,16 @@
 ---
-import { site, nav } from '../data/site';
-import { t, localePath, type Locale } from '../i18n';
+import { nav } from '../data/site';
+import { t, localePath, swapLocale, type Locale } from '../i18n';
 
 const locale: Locale = Astro.url.pathname.startsWith('/id') ? 'id' : 'en';
 const tr = t(locale);
 
-/** CV is the only item that navigates away from the page. */
-const isRoute = (href: string) => href === 'cv';
+/** Anchors stay on the page; anything with a leading slash is a real route. */
+const isRoute = (href: string) => href.startsWith('/');
 ---
 
 <header class="no-print apple-glass nav-condense fixed inset-x-0 top-0 z-50">
+  <div class="nav-scale" data-nav-shell>
   <nav class="canvas flex h-14 items-center justify-between" aria-label="Primary">
     <a
       href={localePath(locale, '/')}
@@ -32,7 +33,7 @@ const isRoute = (href: string) => href === 'cv';
               </a>
             ) : (
               <a
-                href={locale === 'id' ? `/${item.href.replace('#', '#')}` : item.href}
+                href={`${localePath(locale, '/')}${item.href}`}
                 data-nav={item.href}
                 class="transition-colors duration-200 hover:text-ink"
               >
@@ -45,10 +46,16 @@ const isRoute = (href: string) => href === 'cv';
     </ul>
 
     <div class="flex items-center gap-3">
+      {/*
+        `hidden sm:block` used to hide the switcher below the sm breakpoint,
+        where the burger menu takes over — so it was unreachable on a phone.
+        It now stays visible at every width; it is two characters wide.
+      */}
       <a
-        href={locale === 'id' ? '/id' : '/'}
+        href={swapLocale(Astro.url.pathname, locale === 'id' ? 'en' : 'id')}
         hreflang={locale === 'id' ? 'en' : 'id'}
-        class="hidden text-xs text-subtle transition-colors hover:text-ink sm:block"
+        aria-label={tr['nav.theme']}
+        class="text-xs text-subtle transition-colors hover:text-ink"
       >
         {locale === 'id' ? 'EN' : 'ID'}
       </a>
@@ -91,7 +98,7 @@ const isRoute = (href: string) => href === 'cv';
               </a>
             ) : (
               <a
-                href={locale === 'id' ? `/${item.href}` : item.href}
+                href={`${localePath(locale, '/')}${item.href}`}
                 data-nav={item.href}
                 class="block py-2.5 transition-colors hover:text-ink"
               >
@@ -112,6 +119,7 @@ const isRoute = (href: string) => href === 'cv';
   <!-- Read progress, driven entirely by scroll() so it costs no JS. -->
   <div class="pointer-events-none absolute inset-x-0 bottom-0 h-px" aria-hidden="true">
     <div class="scroll-progress h-px w-full bg-accent/50"></div>
+  </div>
   </div>
 </header>
 
@@ -168,6 +176,26 @@ const isRoute = (href: string) => href === 'cv';
     window.addEventListener('scroll', syncRetract, { passive: true });
     window.addEventListener('resize', syncRetract);
 
+    /**
+     * Bar shrink on scroll (port of heynesh.com: the nav container settles to
+     * scale(0.964) and holds).
+     *
+     * Written to `--nav-scale` and consumed by a transform in global.css. The
+     * transition lives there, so this only flips the value at a threshold and
+     * there is one easing curve rather than one per frame.
+     *
+     * Applied to an inner shell, not the header: the header already owns the
+     * retract transform, and an element can only carry one.
+     */
+    const navShell = header?.querySelector<HTMLElement>('[data-nav-shell]') ?? null;
+
+    const syncScale = () => {
+      navShell?.style.setProperty('--nav-scale', window.scrollY > 120 ? '0.964' : '1');
+    };
+
+    syncScale();
+    window.addEventListener('scroll', syncScale, { passive: true });
+
     // Scroll-spy: highlight the last section whose top has passed the reading
     // line. A scroll handler is used rather than IntersectionObserver because
     // the answer depends on section *order* relative to a line, not on overlap.
@@ -186,6 +214,7 @@ const isRoute = (href: string) => href === 'cv';
       for (const section of sections) {
         if (section.offsetTop <= line) active = section.id;
       }
+
 
       // At the foot of the page force the last section on: short trailing
       // sections may never cross the reading line.

@@ -1,0 +1,51 @@
+---
+/**
+ * A section heading that rises word by word as it enters (port of the per-word
+ * scroll reveal on heydane.framer.website).
+ *
+ * The split happens here, at build time, so the stagger costs no runtime JS —
+ * the same reasoning as the hero headline. `--reveal-i` is the cascade index,
+ * read by the CSS `animation-delay` on the modern path and set by
+ * assignCascadeIndexes() on the fallback path, so the two agree.
+ */
+import { splitWords } from '../scripts/words';
+
+interface Props {
+  text: string;
+  /** Heading level. Defaults to h3, which is what every section on the site uses. */
+  as?: 'h1' | 'h2' | 'h3' | 'h4';
+  class?: string;
+}
+
+const { text, as: Tag = 'h3', class: className = '' } = Astro.props;
+const words = splitWords(text);
+---
+
+<Tag class={`word-rise-group ${className}`}>
+  {
+    words.map(({ word, i }) => (
+      <Fragment>
+        {/*
+          The space lives *outside* the mask, as a sibling rather than inside
+          it. `.word-rise` is `overflow: hidden`, so a trailing space placed
+          within the mask is clipped to nothing and the words render run
+          together — "WorkExperience".
+        */}
+        <span class="word-rise" style={`--reveal-i:${i}`}>
+          <span>{word}</span>
+        </span>
+        {i < words.length - 1 && ' '}
+      </Fragment>
+    ))
+  }
+</Tag>
+
+<style>
+  /*
+   * A little bottom padding so the descenders of the last line are not clipped
+   * by the per-word masks, which are `overflow: hidden`.
+   */
+  .word-rise-group {
+    padding-bottom: 0.12em;
+  }
+</style>

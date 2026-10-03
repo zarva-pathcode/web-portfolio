@@ -1,0 +1,189 @@
+---
+/**
+ * Intro curtain (port of the entrance on heynesh.com).
+ *
+ * A full-bleed accent panel covers the page on a cold load, counts to 100, then
+ * lifts upward. Three rules keep it from becoming an obstacle:
+ *
+ *   - Shown once per session. Every client-side navigation under ClientRouter
+ *     is a second visit, so it never plays between pages.
+ *   - Never traps the page. `pointer-events: none` from the first frame, so the
+ *     page behind stays scrollable and clickable even mid-animation.
+ *   - Never hides content on its own. The panel's rest position is *covering*,
+ *     which sounds backwards, but it is what makes the effect robust: without
+ *     scripting the `<noscript>` rule lifts it, with reduced motion the media
+ *     query hides it, and in the normal case the script is what removes it. No
+ *     path leaves a visitor staring at a solid accent rectangle.
+ *
+ * The panel is on screen from the first frame rather than easing in, because
+ * the document has not painted by the time the script runs. Only the exit is
+ * animated, and that is the part a visitor actually watches.
+ */
+---
+
+<div id="curtain" class="curtain" aria-hidden="true">
+  <div class="curtain-panel"></div>
+  <div class="curtain-mark">
+    <span class="curtain-word">ZARVAISM</span>
+    <span class="curtain-count" data-count>0</span>
+  </div>
+</div>
+
+<style>
+  /*
+   * Hidden by default and shown only by the script, which sets `data-armed`
+   * before the first paint. This is what makes the markup safe to ship on
+   * every page: a fresh element arriving under ClientRouter has no
+   * `data-armed` and therefore never covers anything. A class on <html> would
+   * not work — that class persists across navigations, so every swapped-in
+   * curtain would become visible on the way to /cv.
+   */
+  .curtain {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    place-items: center;
+    pointer-events: none;
+  }
+
+  .curtain[data-armed='true'] {
+    display: grid;
+  }
+
+  .curtain-panel {
+    position: absolute;
+    inset: 0;
+    background-color: var(--color-accent);
+    transform: translate3d(0, 0, 0);
+    transition: transform 620ms var(--ease-enter);
+  }
+
+  .curtain-mark {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    font-family: var(--font-sans);
+    color: #000;
+    opacity: 0;
+    transition: transform 620ms var(--ease-enter), opacity 200ms linear;
+  }
+
+  .curtain-word {
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+  }
+
+  .curtain-count {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.7;
+  }
+
+  /* Done: the panel leaves upward and the mark travels out with it. */
+  .curtain[data-done='true'] .curtain-panel {
+    transform: translate3d(0, -101%, 0);
+  }
+
+  .curtain[data-done='true'] .curtain-mark {
+    transform: translate3d(0, -101vh, 0);
+    opacity: 0;
+  }
+
+  /*
+   * Reduced motion needs no rule of its own. The curtain is only ever visible
+   * when the script sets `data-armed`, and it does not do that under reduced
+   * motion, so the `display: none` default already covers this case. The
+   * transition below is still cancelled for the exit, should a preference
+   * change mid-animation.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .curtain-panel,
+    .curtain-mark {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  /**
+   * Runs the count, then hands off to CSS for the lift.
+   *
+   * The count is driven by rAF rather than a fixed interval so the number always
+   * lands on 100 when the panel actually leaves, even if a frame is dropped.
+   */
+  const KEY = 'zarvaism:curtain';
+  let running = false;
+
+  function playCurtain() {
+    const curtain = document.getElementById('curtain');
+    /*
+     * The guard is half of a two-part fix. `astro:page-load` fires on the very
+     * first load as well as on every swap, so without it the second call reads
+     * the session flag that the first call just wrote, decides this is a repeat
+     * visit, and removes a curtain that is still counting.
+     */
+    if (!curtain || running) return;
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const seen = sessionStorage.getItem(KEY) === '1';
+
+    if (reduced || seen) {
+      curtain.remove();
+      return;
+    }
+
+    running = true;
+    sessionStorage.setItem(KEY, '1');
+
+    /*
+     * Armed here, before the first rAF, which is what reveals the panel: the
+     * stylesheet keeps `.curtain` at `display: none` until this attribute is
+     * present. Doing it any later leaves a frame where the count is already
+     * running behind an invisible panel.
+     */
+    curtain.dataset.armed = 'true';
+
+    const count = curtain.querySelector<HTMLElement>('[data-count]');
+    const RISE = 420; // ms the count itself takes
+    const HOLD = 260; // ms the mark is legible before it leaves
+    const start = performance.now();
+
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / RISE);
+      if (count) {
+        // Eased so the last digits do not sprint.
+        const eased = 1 - (1 - p) * (1 - p);
+        count.textContent = String(Math.round(eased * 100));
+      }
+      if (p < 1) {
+        requestAnimationFrame(tick);
+        return;
+      }
+      if (count) count.textContent = '100';
+      setTimeout(() => {
+        curtain.dataset.done = 'true';
+        // Removed from the DOM: leaving a fixed full-screen element in place
+        // keeps it in the paint tree for the rest of the session.
+        setTimeout(() => curtain.remove(), 700);
+      }, HOLD);
+    };
+
+    requestAnimationFrame(tick);
+  }
+
+  playCurtain();
+  /*
+   * ClientRouter re-runs this module's listeners after every swap, and the
+   * curtain markup is baked into every page. Re-running it here would be
+   * correct — the session flag makes it a no-op — except that the flag is only
+   * set once a curtain has actually played, and on a *repeat* visit nothing
+   * plays, so a fresh element on /cv would sit there until it was removed by
+   * the same check. It resolves either way, so the listener is dropped: the
+   * curtain is an entrance, and every client-side navigation is a second
+   * visit by definition.
+   */
+</script>

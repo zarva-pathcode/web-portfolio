@@ -6,7 +6,7 @@ import { mkdirSync } from 'node:fs';
 const W = 1200;
 const H = 630;
 const OUT = 'public/og.png';
-const PORTRAIT = 'src/assets/bg-image.png';
+const PORTRAIT = 'src/assets/bg-image.jpg';
 
 mkdirSync('public', { recursive: true });
 

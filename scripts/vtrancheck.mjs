@@ -29,7 +29,9 @@ console.log('  accent:', (await accentOn()).join(',') || '(none)');
 console.log('\n--- 2. anchor click still smooth-scrolls ---');
 await page.evaluate(() => window.scrollTo(0, 0));
 await page.waitForTimeout(500);
-await page.click('header nav a[href="#about"]');
+// By `data-nav`, not href: that is the section id and what the scroll-spy keys
+// off, so it stays stable regardless of the locale-aware href.
+await page.click('header nav a[data-nav="#about"]');
 await page.waitForTimeout(1800);
 const aboutTop = await page.evaluate(() => Math.round(document.querySelector('#about').getBoundingClientRect().top));
 console.log(`  #about top = ${aboutTop}px ${aboutTop > 60 && aboutTop < 140 ? 'OK' : 'SUSPECT'}`);

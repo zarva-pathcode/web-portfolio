@@ -53,9 +53,9 @@ console.log('button hover bg:', btn.bg);
 console.log('button hover shadow:', btn.shadow);
 
 // Nav active after scrolling into a section
-await page.locator('header nav a[href="#projects"]').click();
+await page.locator('header nav a[data-nav="#projects"]').click();
 await page.waitForTimeout(1400);
-const active = await page.locator('header nav a[href="#projects"]').evaluate((el) => ({
+const active = await page.locator('header nav a[data-nav="#projects"]').evaluate((el) => ({
   color: getComputedStyle(el).color,
   text: el.textContent.trim(),
 }));

@@ -8,6 +8,14 @@ interface Props {
   description?: string;
   image?: string;
   article?: boolean;
+  /**
+   * Explicit hreflang targets, for pages whose path is not a locale prefix
+   * plus a shared slug. Blog posts are the case: each declares its own `lang`
+   * and keeps its own filename, so `/blog/why-astro` and
+   * `/id/blog/kenapa-astro` are different documents with no shared tail.
+   * Without this, the default swap emits a link to a URL that 404s.
+   */
+  alternates?: Partial<Record<Locale, string>>;
 }
 
 const pathname = Astro.url.pathname;
@@ -19,10 +27,21 @@ const {
   description = tr['meta.description'],
   image = '/og.png',
   article = false,
+  alternates,
 } = Astro.props;
 
-const canonical = new URL(pathWithoutLocale(pathname), Astro.site ?? Astro.url.origin);
-const ogImage = new URL(image, Astro.site ?? Astro.url.origin);
+const origin = Astro.site ?? Astro.url.origin;
+const canonical = new URL(pathWithoutLocale(pathname), origin);
+const ogImage = new URL(image, origin);
+
+/*
+ * `alternates`, when supplied, is authoritative: an absent key means "no such
+ * page exists", not "fall back to the prefix swap". Blog posts rely on this — an
+ * English post declares only `en`, and the default would point search engines
+ * at `/id/blog/why-astro`, which is a 404.
+ */
+const alternateFor = (target: Locale) =>
+  alternates ? alternates[target] : localePath(target, pathWithoutLocale(pathname));
 
 const personSchema = {
   '@context': 'https://schema.org',
@@ -65,9 +84,9 @@ const personSchema = {
     <meta name="theme-color" content="#0d1117" />
     <meta name="color-scheme" content="dark" />
 
-    <link rel="alternate" hreflang="en" href={new URL(pathWithoutLocale(pathname), Astro.site ?? Astro.url.origin).toString()} />
-    <link rel="alternate" hreflang="id" href={new URL(localePath('id', pathWithoutLocale(pathname)), Astro.site ?? Astro.url.origin).toString()} />
-    <link rel="alternate" hreflang="x-default" href={new URL(pathWithoutLocale(pathname), Astro.site ?? Astro.url.origin).toString()} />
+    {alternateFor('en') && <link rel="alternate" hreflang="en" href={new URL(alternateFor('en')!, origin).toString()} />}
+    {alternateFor('id') && <link rel="alternate" hreflang="id" href={new URL(alternateFor('id')!, origin).toString()} />}
+    {alternateFor('en') && <link rel="alternate" hreflang="x-default" href={new URL(alternateFor('en')!, origin).toString()} />}
 
     <meta name="author" content={site.name} />
     <meta name="robots" content="index, follow" />

@@ -1,8 +1,8 @@
 ---
 import { Image } from 'astro:assets';
-import { site, heroDisciplines } from '../data/site';
 import { t, type Locale } from '../i18n';
-import heroImage from '../assets/bg-image.png';
+import heroImage from '../assets/bg-image.jpg';
+import { site, heroDisciplines } from '../data/site';
 
 interface Props {
   locale: Locale;
@@ -19,41 +19,67 @@ const words = tr['hero.headline'].split(' ');
   class="relative flex min-h-[94vh] flex-col justify-between pt-28 pb-12"
 >
   <!--
-    Ambient portrait backdrop (port from heynesh.com).
+    Hero portrait (port from heynesh.com).
 
-    The .hero-parallax frame is position: fixed so it persists past the hero
-    section and remains as ambient background texture throughout the entire page.
-    As the hero scrolls away (0 to 100vh), .hero-ambient-img fades from opacity 1
-    to 0.3.
+    This frame is `position: absolute` and lives inside the hero section, so it
+    scrolls away with it. It used to be `fixed`, which pinned the photo to the
+    viewport: it stayed put while the page moved under it, and the whole
+    scroll-driven fade and shrink machinery existed only to manage a frame that
+    was never where it appeared to be. Absolute is both simpler and what the
+    design always meant — the portrait belongs to the hero, so it leaves when
+    the hero does.
 
     Transform ownership rule strictly respected:
-      - .hero-parallax (outer frame): owns scroll-driven drift transform.
-      - .hero-intro (inner frame): owns 3D cursor-follow transform (rAF lerp).
-      - .hero-ambient-img: owns the scroll-driven opacity fade.
-      Three nested elements, each owning exactly one visual channel.
+      - .hero-parallax (outer frame): no scroll-driven transform any more.
+      - .hero-intro (inner frame): owns the 3D cursor-follow transform (rAF
+        lerp).
+      Three nested elements, at most one visual channel between them.
   -->
   <div
-    class="hero-parallax pointer-events-none fixed inset-0 z-0 flex select-none items-center justify-end overflow-hidden"
+    class="hero-parallax pointer-events-none absolute inset-0 z-0 flex select-none items-center justify-end overflow-hidden"
   >
-    <div
-      class="hero-intro relative h-full w-full overflow-hidden opacity-45 lg:w-3/5 lg:opacity-90"
-    >
+    {/*
+      The static `opacity-45` / `lg:opacity-90` pair is gone. A fixed opacity on
+      this frame multiplied against the scroll-driven fade on
+      `.hero-ambient-img`, dimming the portrait at every scroll position and
+      stopping it reaching full strength even while the hero was on screen. The
+      scrims below carry the contrast job on their own.
+    */}
+    <div class="hero-intro relative h-full w-full overflow-hidden lg:w-[46%] lg:pr-[6%]">
+      {/*
+        The picture drifts inside its frame. `data-parallax` hands this to the
+        existing motion.ts loop, so the hero uses the same mechanism as the
+        project screenshots rather than a second, parallel implementation.
+
+        `scale-[1.14]` is the overshoot: without it the drift would pull the
+        photo off the top or bottom of the frame and expose an edge. The frame
+        itself is `absolute`, so it scrolls away with the hero — the drift is on
+        the image only.
+      */}
       <Image
         src={heroImage}
         alt={site.name}
         widths={[720, 1080, 1440]}
-        sizes="(min-width: 1024px) 60vw, 100vw"
+        sizes="(min-width: 1024px) 46vw, 100vw"
         loading="eager"
         fetchpriority="high"
-        class="hero-ambient-img h-full w-full object-cover object-center will-change-opacity"
+        data-parallax="56"
+        class="hero-ambient-img h-full w-full scale-[1.14] object-cover object-center will-change-transform"
       />
       {/*
-        Left-to-right, dark first: the headline sits over the left third, so that
-        side has to stay black enough for contrast, and the image is allowed to
-        clear on the right.
+        Both scrims sit on `.hero-scrim`, which carries the same scroll-driven
+        fade as the image above.
+
+        They used to be bare `absolute inset-0` divs at full opacity. Fading the
+        image alone was not enough: the scrims are `bg-linear-to-r` and
+        `bg-linear-to-t` in near-black, and at full strength they painted a
+        60vw dark rectangle over the right side of the page for the rest of the
+        session. That is the dark block over the #archive table — the image was
+        gone but the scrims stayed, which is why the text under them was still
+        unreadable after the portrait fade was fixed.
       */}
-      <div class="absolute inset-0 bg-linear-to-r from-black via-black/80 to-black/30"></div>
-      <div class="absolute inset-0 bg-linear-to-t from-black via-transparent to-black/70"></div>
+      <div class="hero-scrim absolute inset-0 bg-linear-to-r from-black via-black/80 to-black/30"></div>
+      <div class="hero-scrim absolute inset-0 bg-linear-to-t from-black via-transparent to-black/70"></div>
     </div>
   </div>
 
@@ -110,4 +136,5 @@ const words = tr['hero.headline'].split(' ');
       }
     </div>
   </div>
+
 </section>

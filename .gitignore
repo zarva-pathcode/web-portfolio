@@ -28,3 +28,6 @@ pnpm-debug.log*
 
 # vercel
 .vercel
+
+# Playwright output from the scripts/ gates — regenerated on every run
+tmp-refshots/

@@ -17,9 +17,22 @@ const dateLabel = new Intl.DateTimeFormat(locale === 'id' ? 'id-ID' : 'en-GB', {
   month: 'long',
   year: 'numeric',
 }).format(post.data.pubDate);
+
+/*
+ * A post exists in exactly one language — the filename is the slug, and the
+ * two languages use different filenames. Only the language it was written in is
+ * declared, which is the correct signal: telling search engines about a
+ * translation that does not exist sends them to a 404.
+ */
+const alternates = { [post.data.lang]: localePath(post.data.lang, `/blog/${post.id}`) };
 ---
 
-<Page title={post.data.title} description={post.data.description} article>
+<Page
+  title={post.data.title}
+  description={post.data.description}
+  article
+  alternates={alternates}
+>
   <article class="canvas py-20 md:py-28">
     <a
       href={localePath(locale, '/blog')}

@@ -6,11 +6,12 @@
  * browsers those elements would sit motionless at their rest value with no
  * error to explain why. This module fills that gap:
  *
- *   - initScrollEffects() mirrors hero parallax, the timeline spine and the read
- *     progress bar from a rAF loop reading getBoundingClientRect().
+ *   - initScrollEffects() mirrors the timeline spine, the read progress bar and
+ *     the nav retract from a rAF loop reading getBoundingClientRect().
  *   - initSectionReveal() runs the staggered reveal wherever scroll timelines
  *     are unavailable.
- *   - initTilt() and initCursor() are pointer effects with no CSS equivalent.
+ *   - initCursor() and initPortraitFollow() are pointer effects with no CSS
+ *     equivalent.
  *
  * Every entry point is idempotent and re-runnable, because ClientRouter swaps
  * the DOM on navigation and these listeners are bound to replaced elements.
@@ -36,16 +37,17 @@ export function initScrollEffects() {
   if (HAS_SCROLL_TIMELINE()) return;
   if (REDUCED()) return;
 
-  const hero = document.querySelector<HTMLElement>('.hero-parallax');
-  const ambientImg = document.querySelector<HTMLElement>('.hero-ambient-img');
+  /*
+   * The portrait frame is not driven from here. It is `absolute` inside the
+   * hero, so the browser scrolls it out with the section and there is nothing
+   * for this loop to do to it.
+   */
   const spine = document.querySelector<HTMLElement>('.spine-draw');
   const progress = document.querySelector<HTMLElement>('.scroll-progress');
   const nav = document.querySelector<HTMLElement>('header.nav-condense');
-  if (!hero && !ambientImg && !spine && !progress && !nav) return;
+  if (!spine && !progress && !nav) return;
 
   const state = {
-    hero: hero ? hero.style.transform : '',
-    ambient: ambientImg ? ambientImg.style.opacity : '',
     spine: spine ? spine.style.transform : '',
     progress: progress ? progress.style.transform : '',
     nav: nav ? nav.style.transform : '',
@@ -56,29 +58,6 @@ export function initScrollEffects() {
 
   const update = () => {
     queued = false;
-
-    if (hero) {
-      // Matches the CSS range of `0 100vh`, clamped to the hero's own height so
-      // a short hero does not drift further than it can fill.
-      const span = Math.min(window.innerHeight, document.body.scrollHeight || 1e5);
-      const p = Math.min(1, window.scrollY / span);
-      const next = `translate3d(0, ${(p * 80).toFixed(2)}px, 0)`;
-      if (next !== state.hero) {
-        hero.style.transform = next;
-        state.hero = next;
-      }
-    }
-
-    if (ambientImg) {
-      // Ambient portrait fade (port from heynesh.com): 1 -> 0.3 across 0..100vh
-      const span = Math.min(window.innerHeight, document.body.scrollHeight || 1e5);
-      const p = Math.min(1, Math.max(0, window.scrollY / span));
-      const next = (1 - p * 0.7).toFixed(3);
-      if (next !== state.ambient) {
-        ambientImg.style.opacity = next;
-        state.ambient = next;
-      }
-    }
 
     if (nav) {
       // Nav retract on scroll (port from zamkara.dev)
@@ -173,7 +152,7 @@ export function initSectionReveal() {
   if (HAS_SCROLL_TIMELINE()) return;
 
   const targets = document.querySelectorAll<HTMLElement>(
-    '.reveal, .fade-only, .reveal-group > *',
+    '.reveal, .fade-only, .reveal-group > *, .word-rise',
   );
   if (!targets.length) return;
 
@@ -237,7 +216,7 @@ export function initRevealSafetyNet() {
     if (window.scrollY < max - window.innerHeight * 2) return;
 
     const stranded = document.querySelectorAll<HTMLElement>(
-      '.reveal:not(.is-reached), .reveal-group > :not(.is-reached)',
+      '.reveal:not(.is-reached), .reveal-group > :not(.is-reached), .word-rise:not(.is-reached)',
     );
     for (const el of stranded) el.classList.add('is-reached');
 
@@ -266,9 +245,8 @@ const INTERACTIVE = 'a, button, [role="button"], input, textarea, select, label,
  * Depth parallax on the project screenshots.
  *
  * Each image drifts vertically inside its own frame as the row crosses the
- * viewport, slower than the page. It is the same idea as the hero backdrop, but
- * at a different rate and on a per-element timeline, which is what makes it read
- * as depth rather than as decoration.
+ * viewport, slower than the page. It is per-element rather than global, which
+ * is what makes it read as depth rather than as decoration.
  *
  * The value is `--drift` in pixels, written straight onto the image wrapper. Only
  * `transform` is touched, so nothing here forces layout. Every element is read

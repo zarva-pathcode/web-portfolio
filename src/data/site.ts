@@ -20,13 +20,20 @@ export const social = [
   { label: 'GitHub', handle: 'zarva-pathcode', href: 'https://github.com/zarva-pathcode' },
 ] as const;
 
-/** Single-page anchors. CV is the one item that leaves the page. */
+/**
+ * Home-page anchors, plus the one item that leaves the page.
+ *
+ * CV carries a leading slash. It used to be a bare `'cv'`, which `localePath`
+ * joined without a separator: `/id` + `cv` became `/idcv`, and on the English
+ * side the relative `cv` resolved against the current directory, so the nav
+ * 404'd on every page except the home page.
+ */
 export const nav = [
   { label: 'Home', href: '#hero' },
   { label: 'About', href: '#about' },
   { label: 'Experience', href: '#experience' },
   { label: 'Project', href: '#projects' },
-  { label: 'CV', href: 'cv' },
+  { label: 'CV', href: '/cv' },
 ] as const;
 
 export const disciplines = [

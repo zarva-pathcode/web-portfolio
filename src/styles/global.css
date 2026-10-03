@@ -119,6 +119,134 @@
   }
 
   /*
+   * Bar shrink on scroll (port of heynesh.com, where the nav container settles
+   * to scale(0.964) and holds).
+   *
+   * The value is written by FloatingNav's scroll handler onto an inner shell,
+   * not the header itself: the header already owns the retract transform, and
+   * a CSS animation beats an inline style, so two effects on one element means
+   * one of them silently loses. The transition lives here so the JS only flips
+   * a value at a threshold.
+   */
+  .nav-scale {
+    transform: scale(var(--nav-scale, 1));
+    transform-origin: 50% 0;
+    transition: transform 0.45s var(--ease-enter);
+  }
+
+  /*
+   * Per-word heading reveal (port of heydane.framer.website, where each word
+   * rises and settles on its own as the heading enters).
+   *
+   * `.word-rise` is the clip; `.word-rise > span` is the moving part. Same
+   * ownership rule as the hero headline: the mask never transforms, so the
+   * child can.
+   */
+  .word-rise {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: bottom;
+  }
+
+  .word-rise > span {
+    display: inline-block;
+    animation-name: word-rise-up;
+    animation-duration: var(--dur-enter);
+    animation-timing-function: var(--ease-enter);
+    animation-fill-mode: both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 90%;
+    animation-delay: calc(var(--reveal-i, 0) * 55ms);
+  }
+
+  @keyframes word-rise-up {
+    from {
+      transform: translateY(115%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  /*
+   * The same effect without a scroll timeline. `--reveal-i` is set by
+   * assignCascadeIndexes(), so a heading's words cascade the same way here as
+   * on the modern path.
+   */
+  @supports not (animation-timeline: view()) {
+    .word-rise > span {
+      animation: none;
+      opacity: 0;
+      transform: translateY(115%);
+      transition:
+        transform 0.7s var(--ease-enter),
+        opacity 0.7s var(--ease-enter);
+      transition-delay: calc(var(--reveal-i, 0) * 55ms);
+    }
+
+    .word-rise.is-visible > span {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nav-scale {
+      transform: none !important;
+    }
+
+    .word-rise > span {
+      animation: none !important;
+      transform: none !important;
+      opacity: 1 !important;
+    }
+  }
+
+  /*
+   * Screenshot zoom on hover (port of heynesh.com, where a work card scales up
+   * into its own frame).
+   *
+   * Two triggers. The image fills its wrapper, so hovering the picture itself
+   * is always right; the `.group` form additionally lights it up when the
+   * pointer is anywhere in the surrounding row, which is what the reference
+   * does. `overflow: hidden` on the wrapper is what keeps the image inside its
+   * frame while it grows — without it the zoom spills over the panel border.
+   */
+  .zoom-frame {
+    overflow: hidden;
+  }
+
+  .zoom-frame > img {
+    transition: transform 0.7s var(--ease-enter);
+    will-change: transform;
+  }
+
+  @media (hover: hover) and (min-width: 1024px) {
+    .zoom-frame:hover > img,
+    .group:hover .zoom-frame > img,
+    .group:focus-within .zoom-frame > img {
+      transform: scale(1.06);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .zoom-frame > img {
+      transition: none;
+      transform: none !important;
+    }
+  }
+
+  /*
+   * Escape hatch for a per-word reveal, matching the one `.reveal` already has.
+   * Without it, a heading that never quite reaches its entry range stays
+   * translated off its own mask and the section reads as an empty gap.
+   */
+  .word-rise.is-reached > span {
+    transform: translateY(0) !important;
+    opacity: 1 !important;
+  }
+
+  /*
    * Nav retract on scroll (port from zamkara.dev)
    *
    * Replaces the old background crossfade with a physical retract.
@@ -278,26 +406,37 @@
    * value. The longhand form survives minification and produces a real
    * ScrollTimeline. Keep the animation-* properties split.
    */
+  /*
+   * Scroll entrance: the element rises into place, but it is *never hidden*.
+   *
+   * `from` deliberately omits `opacity`. Text must be readable the instant it
+   * is on screen, and motion is an addition to that, never a precondition. An
+   * earlier version faded from `opacity: 0`, and because the range spanned the
+   * element's whole entry phase, a tall block sat invisible for up to 750px of
+   * scrolling after the reader had already passed it.
+   *
+   * The amplitude is what makes this read as motion rather than a static page.
+   * It was 1.5rem — 24px, which is 2.7% of a 900px viewport and effectively
+   * invisible. The lift is now 4rem with a slight scale-down on release, so the
+   * block visibly arrives rather than merely being present. Still no opacity
+   * change: if it is caught mid-flight the worst case is a block sitting 4rem
+   * low, which is fully legible.
+   *
+   * `cubic-bezier(0.16, 1, 0.3, 1)` replaces `linear`. A linear ramp reads as
+   * mechanical because scroll velocity is already non-linear; easing it to a
+   * slow settle gives the motion weight without changing what it costs.
+   *
+   * The range stays short — the motion completes a quarter of the way through
+   * the element's travel, so a tall block is settled well before it reaches
+   * reading position.
+   */
   .reveal {
     animation-name: reveal-up;
     animation-duration: auto;
-    animation-timing-function: linear;
+    animation-timing-function: var(--ease-enter);
     animation-fill-mode: both;
     animation-timeline: view();
-    /*
-     * Completes at `entry 100%`, when the element is fully in the viewport,
-     * rather than at 40% of the way in.
-     *
-     * A range that ends partway through entry looked deliberate but was not: for
-     * a short element the whole entry phase is only as tall as the element, so
-     * 40% of it is a handful of pixels at the very end of the page. Measured on
-     * the home page, the footer sat at opacity 0 for the last 400px of scroll
-     * and only appeared within the final 200. An entry-based range cannot fix
-     * that on its own, because for the last element on the page "arrival" and
-     * "end of document" are the same scroll position. The range here finishes as
-     * early as the timeline allows, and `.is-reached` below covers the rest.
-     */
-    animation-range: entry 0% entry 100%;
+    animation-range: entry 0% cover 25%;
   }
 
   /*
@@ -314,17 +453,19 @@
   }
 
   /*
-   * Sibling staggering. A section's direct children reveal one after another, so
+   * Sibling staggering. A section's direct children rise one after another, so
    * a grid of cards cascades instead of arriving as a single block. motion.ts
    * sets the same `--reveal-i` values on the fallback path.
+   *
+   * No `opacity` here either, for the same reason as `.reveal` above.
    */
   .reveal-group > * {
     animation-name: reveal-up;
     animation-duration: auto;
-    animation-timing-function: linear;
+    animation-timing-function: var(--ease-enter);
     animation-fill-mode: both;
     animation-timeline: view();
-    animation-range: entry 0% entry 100%;
+    animation-range: entry 0% cover 25%;
     animation-delay: calc(var(--reveal-i, 0) * 80ms);
   }
 
@@ -357,20 +498,25 @@
    * element would sit at its rest value with no animation at all, so these are
    * driven by motion.ts from a rAF loop reading getBoundingClientRect() instead.
    */
+  /*
+   * Scroll timelines are only widely available in Chromium. Everywhere else the
+   * element would sit at its rest value with no animation at all, so these are
+   * driven by motion.ts from a rAF loop reading getBoundingClientRect() instead.
+   *
+   * The fallback is transform-only for the same reason the primary path is: no
+   * `opacity: 0` to strand text. If the IntersectionObserver never fires, the
+   * worst case is an element sitting 4rem low, which is still fully readable.
+   */
   @supports not (animation-timeline: view()) {
     .reveal,
     .reveal-group > * {
-      opacity: 0;
-      transform: translateY(3.25rem) scale(0.985);
-      transition:
-        opacity 0.7s var(--ease-enter),
-        transform 0.7s var(--ease-enter);
+      transform: translateY(4rem);
+      transition: transform 0.7s var(--ease-enter);
       transition-delay: calc(var(--reveal-i, 0) * 80ms);
     }
 
     .reveal.is-visible,
     .reveal-group > .is-visible {
-      opacity: 1;
       transform: none;
     }
 
@@ -384,13 +530,20 @@
     }
   }
 
+  /*
+   * The lift itself. No `opacity` in the `from` frame — the element is legible
+   * for the entire animation, it just arrives slightly low and a touch small.
+   * See the note above `.reveal` for why.
+   *
+   * The 0.97 scale is what gives the arrival depth rather than just movement:
+   * the block grows into place instead of sliding, and it is subtle enough that
+   * a reader catching it mid-flight does not see a size change.
+   */
   @keyframes reveal-up {
     from {
-      opacity: 0;
-      transform: translateY(3.25rem) scale(0.985);
+      transform: translateY(4rem) scale(0.97);
     }
     to {
-      opacity: 1;
       transform: none;
     }
   }
@@ -398,58 +551,79 @@
   /* --- Scroll-driven media motion -------------------------------------- */
 
   /*
-   * The hero frame drifts slower than the page. It runs on the root scroller
-   * rather than a view() timeline: the hero is slightly shorter than the
-   * viewport, which leaves `exit` a degenerate ~60px window — too narrow to
-   * read. An explicit length range off the root scroller is both predictable and
-   * responsive.
+   * No scroll-driven rules for the portrait frame at all.
+   *
+   * It used to carry three in turn: a 5rem vertical drift, an opacity fade, and
+   * a scale-down. All three existed only to manage a `position: fixed` frame,
+   * which is pinned to the viewport and therefore never leaves with the page.
+   * That is why the photo appeared to follow the scroll rather than belong to
+   * the hero, and why each fix fought the last one.
+   *
+   * The frame is now `absolute` inside the hero section. The browser scrolls it
+   * out with the rest of the section, so there is nothing left to animate: no
+   * drift, no fade, no scale. Nothing here writes `opacity` either, which is
+   * what made the element's own box visible as a rectangle partway through a
+   * fade.
+   *
+   * The frame is `absolute` inside the hero section and the browser scrolls it
+   * out with the rest of that section, so there is nothing left to animate at
+   * this level. The picture inside it drifts, which is a different channel and
+   * belongs on the image — see `hero-image-drift` below.
    */
-  .hero-parallax {
-    animation-name: hero-parallax;
-    animation-duration: auto;
-    animation-timing-function: linear;
-    animation-fill-mode: both;
-    animation-timeline: scroll(root block);
-    animation-range: 0 100vh;
+
+  /*
+   * The hero portrait drifts inside its own frame, on the same `--drift`
+   * mechanism as the project screenshots — so both use one implementation
+   * rather than a CSS timeline for one and a rAF loop for the other.
+   *
+   * The `scale(1.14)` is the overshoot. It has to be composed *before* the
+   * translate so it scales with it: the image must always be larger than the
+   * frame or the drift exposes an edge. Written as a single transform for
+   * exactly that reason — two properties would compose in an order I would
+   * have to remember.
+   */
+  .hero-ambient-img {
+    transform: translate3d(0, var(--drift, 0px), 0) scale(1.14);
   }
 
-  @keyframes hero-parallax {
-    from {
-      transform: translate3d(0, 0, 0);
+  @media (prefers-reduced-motion: reduce) {
+    .hero-ambient-img {
+      transform: scale(1.14) !important;
     }
-    to {
-      transform: translate3d(0, 5rem, 0);
-    }
+  }
+
+
+  /*
+   * One elliptical mask, sized and positioned so its transparent stop arrives at
+   * every edge of the frame before the frame ends.
+   *
+   * The frame is `lg:w-3/5` and right-aligned, so its left boundary is a
+   * vertical line at 60% of the viewport, out of reach of a gradient centred
+   * inside the box. Measured at y=600 that edge jumped from luminance 0 to 19
+   * across five pixels.
+   *
+   * At centre 75% with a 100% horizontal radius, the left edge sits at 0.75 of
+   * the radius, the right at 0.25, top and bottom at 0.54, and the face at 0.08.
+   * Fading from 35% to 95% therefore dissolves the left edge along with the top
+   * and bottom while leaving the right side and the face solid.
+   */
+  .hero-intro {
+    --portrait-mask: radial-gradient(ellipse 100% 105% at 75% 50%, #000 0%, #000 35%, transparent 95%);
+    -webkit-mask-image: var(--portrait-mask);
+    mask-image: var(--portrait-mask);
   }
 
   /*
-   * Ambient portrait fade (port from heynesh.com)
-   *
-   * The portrait frame is fixed in the viewport throughout the page. As the hero
-   * scrolls away (0 to 100vh), the image fades from 1.0 to 0.3 to become an
-   * ambient background texture behind the lower sections.
-   *
-   * Transform ownership rule: .hero-parallax owns the vertical drift transform;
-   * .hero-intro owns the cursor-follow transform; this effect animates opacity
-   * on the inner image itself (.hero-ambient-img). Exactly one transform per element.
+   * Reduced motion pins the drift to its neutral midpoint — the image sits at
+   * scale 1.14 with no vertical offset, which is its rest state.
    */
-  .hero-ambient-img {
-    animation-name: hero-ambient-fade;
-    animation-duration: auto;
-    animation-timing-function: linear;
-    animation-fill-mode: both;
-    animation-timeline: scroll(root block);
-    animation-range: 0 100vh;
+  @media (prefers-reduced-motion: reduce) {
+    .hero-ambient-img {
+      animation: none !important;
+      transform: scale(1.14) !important;
+    }
   }
 
-  @keyframes hero-ambient-fade {
-    from {
-      opacity: 1;
-    }
-    to {
-      opacity: 0.3;
-    }
-  }
 
   /*
    * Hero entrance and 3D cursor-follow (port from heydane.framer.website).
@@ -682,15 +856,16 @@
     display: none !important;
   }
 
+  /*
+   * The portrait frame only ever had scroll-driven rules because it used to be
+   * `position: fixed`. It is `absolute` now and the browser scrolls it out with
+   * the hero, so reduced-motion visitors get exactly what everyone else gets —
+   * no rule needed, and none should hide it.
+   */
   .hero-parallax,
   .hero-intro {
     animation: none !important;
     transform: none !important;
-  }
-
-  .hero-ambient-img {
-    animation: none !important;
-    opacity: 1 !important;
   }
 
   /* Restores the pre-redesign framing, which covered the full width. */

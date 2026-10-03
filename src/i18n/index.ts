@@ -229,11 +229,42 @@ export function isLocale(value: string | undefined): value is Locale {
 }
 
 export function localeFromPath(pathname: string): Locale {
-  const [, first] = pathname.split('/');
-  return isLocale(first) ? first : defaultLocale;
+  const [, maybeLocale] = pathname.split('/');
+  return isLocale(maybeLocale) ? maybeLocale : defaultLocale;
 }
 
+/*
+ * Reads the *second* segment, not the first. `'/id'.split('/')` is `['', 'id']`,
+ * so the first element is an empty string and the bare locale home page fell
+ * through the check unchanged — which is why the switcher on `/id` produced
+ * `/id` instead of `/`.
+ */
 export function pathWithoutLocale(pathname: string): string {
-  const [first, ...rest] = pathname.split('/');
-  return isLocale(first) ? `/${rest.join('/')}` || '/' : pathname;
+  const [, maybeLocale, ...rest] = pathname.split('/');
+  if (!isLocale(maybeLocale)) return pathname;
+  return rest.length ? `/${rest.join('/')}` : '/';
 }
+
+/**
+ * Where the language switcher should send the visitor, for a target locale.
+ *
+ * `/id/projects/artiva` -> `/projects/artiva` (to 'en')
+ * `/projects/artiva`     -> `/id/projects/artiva` (to 'id')
+ *
+ * The switcher used to hardcode `/` and `/id`, so from any page other than the
+ * home page it either did nothing or dropped the visitor on the Indonesian home
+ * page. `localePath` cannot express this on its own: it builds a path from
+ * scratch rather than swapping a prefix, so handing it a bare `/` loses the
+ * current route.
+ *
+ * Blog posts are the exception. Each declares its own `lang` in frontmatter and
+ * the route is built from that, so `/blog/why-astro` and `/id/blog/kenapa-astro`
+ * are different documents and there is no Indonesian version of the English
+ * post. Swapping the prefix there is a guaranteed 404, so those land on the
+ * blog index in the target language instead, which always exists.
+ */
+export function swapLocale(pathname: string, to: Locale): string {
+  const bare = pathWithoutLocale(pathname);
+  return localePath(to, /^\/blog\/[^/]+\/?$/.test(bare) ? '/blog' : bare);
+}
+
