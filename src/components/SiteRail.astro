@@ -1,0 +1,110 @@
+---
+import { site } from '../data/site';
+import { localePath, type Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const isId = locale === 'id';
+const here = Astro.url.pathname;
+const isHome = here === '/' || here === '/id/' || here === '/id';
+const homeBase = localePath(locale, '/');
+
+const sections = [
+  { n: '01', id: 'hero', label: isId ? 'Beranda' : 'Hero' },
+  { n: '02', id: 'about', label: isId ? 'Tentang' : 'About' },
+  { n: '03', id: 'how', label: isId ? 'Cara Kerja' : 'How I Work' },
+  { n: '04', id: 'experience', label: isId ? 'Pengalaman' : 'Experience' },
+  { n: '05', id: 'projects', label: isId ? 'Karya Pilihan' : 'Selected Work' },
+  { n: '06', id: 'other', label: isId ? 'Proyek Lain' : 'Other Projects' },
+  { n: '07', id: 'faq', label: 'FAQ' },
+];
+---
+
+<aside
+  aria-label={isId ? 'Navigasi utama' : 'Primary navigation'}
+  class="fixed inset-y-0 left-0 z-[70] hidden w-[60px] flex-col justify-between border-r border-[color:var(--hairline)] bg-[color:var(--surface)] sm:flex"
+>
+  <!-- Vertical clay scroll progress bar along the right rail spine -->
+  <div class="rail-progress" data-rail-progress aria-hidden="true"></div>
+
+  <!-- Top zone: Z Monogram brand anchor + availability dot -->
+  <div class="border-b border-[color:var(--hairline)]">
+    <a
+      href={homeBase}
+      data-magnetic="soft"
+      class="rail-item group relative flex h-[78px] flex-col items-center justify-center gap-2 transition-colors hover:bg-[color:var(--hover)]"
+      aria-label={`${site.brand} — ${isId ? 'Beranda' : 'Home'}`}
+    >
+      <span class="display text-[1.55rem] leading-none text-ink transition-colors group-hover:text-brand">
+        Z
+      </span>
+      <span class="size-1.5 rounded-full bg-signal" aria-hidden="true"></span>
+      <span class="rail-tooltip" aria-hidden="true">
+        {site.brand} · {site.availability[locale]}
+      </span>
+    </a>
+  </div>
+
+  <!-- Center zone: 01–07 interactive section spine with slide-out tooltips -->
+  <nav
+    aria-label={isId ? 'Indeks bagian halaman' : 'Section index'}
+    class="flex flex-1 flex-col items-center justify-center gap-4 py-4"
+  >
+    {
+      sections.map((s) => (
+        <a
+          href={isHome ? `#${s.id}` : `${homeBase === '/' ? '' : homeBase}/#${s.id}`}
+          data-rail-link={s.id}
+          data-magnetic="soft"
+          class="rail-item group relative flex w-full flex-col items-center gap-1.5 py-1.5"
+          aria-label={`${s.n} ${s.label}`}
+        >
+          <span class="rail-tick" aria-hidden="true" />
+          <span class="rail-num label text-[0.5625rem] leading-none text-subtle transition-colors duration-200 group-hover:text-ink">
+            {s.n}
+          </span>
+          <span class="rail-tooltip" aria-hidden="true">
+            <span class="text-brand">{s.n}</span> · {s.label} →
+          </span>
+        </a>
+      ))
+    }
+  </nav>
+
+  <!-- Bottom zone: rotating theme toggle + morphing 2-line hamburger -->
+  <div class="border-t border-[color:var(--hairline)]">
+    <button
+      type="button"
+      data-theme-toggle
+      data-magnetic="soft"
+      class="rail-item theme-btn group relative flex h-[58px] w-full cursor-pointer items-center justify-center border-b border-[color:var(--hairline)] text-ink transition-colors hover:bg-[color:var(--hover)] hover:text-brand"
+      aria-label={isId ? 'Ganti tema warna' : 'Switch colour theme'}
+      aria-pressed="false"
+    >
+      <span class="theme-icon text-sm leading-none" data-theme-icon aria-hidden="true">☾</span>
+      <span class="rail-tooltip" aria-hidden="true">
+        <span data-theme-label>Night</span> {isId ? 'Mode' : 'Mode'}
+      </span>
+    </button>
+
+    <button
+      type="button"
+      data-nav-open
+      data-magnetic="soft"
+      class="rail-item ham-btn group relative flex h-[64px] w-full cursor-pointer items-center justify-center text-ink transition-colors hover:bg-[color:var(--hover)]"
+      aria-label={isId ? 'Buka menu' : 'Open menu'}
+      aria-controls="site-menu"
+      aria-expanded="false"
+    >
+      <span class="ham-lines" aria-hidden="true">
+        <span class="ham-line ham-line--top"></span>
+        <span class="ham-line ham-line--bot"></span>
+      </span>
+      <span class="rail-tooltip" aria-hidden="true">
+        {isId ? 'MENU · INDEKS' : 'MENU · INDEX'}
+      </span>
+    </button>
+  </div>
+</aside>

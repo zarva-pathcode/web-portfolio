@@ -1,12 +1,12 @@
 ---
 import Page from '../layouts/Page.astro';
 import Hero from '../components/Hero.astro';
-import About from '../components/About.astro';
-import Disciplines from '../components/Disciplines.astro';
-import ExperienceTimeline from '../components/ExperienceTimeline.astro';
-import FeaturedProjects from '../components/FeaturedProjects.astro';
-import OtherProjects from '../components/OtherProjects.astro';
-import Contact from '../components/Contact.astro';
+import AboutSection from '../components/sections/AboutSection.astro';
+import HowIWork from '../components/sections/HowIWork.astro';
+import ExperienceSection from '../components/sections/ExperienceSection.astro';
+import WorkSection from '../components/sections/WorkSection.astro';
+import OtherProjectsSection from '../components/sections/OtherProjectsSection.astro';
+import FaqSection from '../components/sections/FaqSection.astro';
 import type { Locale } from '../i18n';
 
 interface Props {
@@ -17,10 +17,10 @@ const { locale } = Astro.props;
 
 <Page>
   <Hero locale={locale} />
-  <About locale={locale} />
-  <Disciplines locale={locale} />
-  <ExperienceTimeline locale={locale} />
-  <FeaturedProjects locale={locale} />
-  <OtherProjects locale={locale} />
-  <Contact locale={locale} />
+  <AboutSection locale={locale} />
+  <HowIWork locale={locale} />
+  <ExperienceSection locale={locale} />
+  <WorkSection locale={locale} />
+  <OtherProjectsSection locale={locale} />
+  <FaqSection locale={locale} />
 </Page>

@@ -1,12 +1,11 @@
 ---
 import { ClientRouter } from 'astro:transitions';
 import Base from './Base.astro';
-import FloatingNav from '../components/FloatingNav.astro';
-import IntroCurtain from '../components/IntroCurtain.astro';
-import Footer from '../components/Footer.astro';
-import TransitionSquare from '../components/TransitionSquare.astro';
-import Telemetry from '../components/Telemetry.astro';
-import type { Locale } from '../i18n';
+import SiteRail from '../components/SiteRail.astro';
+import NavMenu from '../components/NavMenu.astro';
+import BackToTop from '../components/BackToTop.astro';
+import ShellFooter from '../components/ShellFooter.astro';
+import { localeFromPath, type Locale } from '../i18n';
 
 interface Props {
   title?: string;
@@ -15,16 +14,83 @@ interface Props {
   article?: boolean;
   alternates?: Partial<Record<Locale, string>>;
 }
+
+const locale: Locale = localeFromPath(Astro.url.pathname);
 ---
 
 <Base {...Astro.props}>
   <ClientRouter />
-  <IntroCurtain />
-  <TransitionSquare />
-  <Telemetry />
-  <FloatingNav />
-  <main id="main">
-    <slot />
-  </main>
-  <Footer />
+  <a
+    href="#main"
+    class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded focus:bg-canvas focus:px-4 focus:py-2 focus:text-ink"
+  >
+    Skip to content
+  </a>
+  <SiteRail locale={locale} />
+  <NavMenu locale={locale} />
+  <BackToTop />
+  <div id="pointer-badge" class="pointer-badge" aria-hidden="true">
+    <span data-badge-text>OPEN CASE →</span>
+  </div>
+  <div class="pb-24 sm:pb-0 sm:pl-[60px]">
+    <main id="main" class="bg-canvas text-ink">
+      <slot />
+    </main>
+    <ShellFooter locale={locale} />
+  </div>
 </Base>
+
+<script>
+  import '../lib/motion/index.ts';
+</script>
+
+<script is:inline>
+  (function () {
+    function paintThemeButtons() {
+      var night = document.documentElement.dataset.theme === 'night';
+      document.querySelectorAll('[data-theme-label]').forEach(function (el) {
+        el.textContent = night ? 'Paper' : 'Night';
+        el.dataset.scrambleText = night ? 'Paper' : 'Night';
+      });
+      document.querySelectorAll('[data-theme-icon]').forEach(function (el) {
+        el.textContent = night ? '☀' : '☾';
+      });
+      document.querySelectorAll('[data-theme-toggle]').forEach(function (b) {
+        b.setAttribute('aria-pressed', night ? 'true' : 'false');
+      });
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', night ? '#12100e' : '#f3efe6');
+    }
+
+    function bindThemeButtons() {
+      document.querySelectorAll('[data-theme-toggle]').forEach(function (b) {
+        if (b.dataset.bound) return;
+        b.dataset.bound = '1';
+        b.addEventListener('click', function () {
+          var root = document.documentElement;
+          var next = root.dataset.theme === 'night' ? 'paper' : 'night';
+          root.classList.add('theme-anim');
+          root.dataset.theme = next;
+          b.classList.add('is-spinning');
+          window.setTimeout(function () { b.classList.remove('is-spinning'); }, 420);
+          try {
+            localStorage.setItem('theme', next);
+          } catch (e) {}
+          paintThemeButtons();
+        });
+      });
+      paintThemeButtons();
+    }
+
+    if (!window.__zarvaThemeBtnBound) {
+      window.__zarvaThemeBtnBound = true;
+      document.addEventListener('astro:page-load', bindThemeButtons);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bindThemeButtons);
+    } else {
+      bindThemeButtons();
+    }
+  })();
+</script>

@@ -41,3 +41,28 @@ All commands are run from the root of the project, from a terminal:
 ## 👀 Want to learn more?
 
 Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+
+
+## Pinned Selected Work
+
+The Selected Work section is a pinned stage on desktop (`lg` and up): the
+content sticks for a 280vh track and the active case steps as you scroll.
+
+- Progress is computed from the track rect in `src/components/sections/WorkSection.astro`.
+- Step boundaries are even thirds; the counter in the pinned header shows `02 / 03`.
+- Hover and keyboard focus still override the scroll step.
+- Mobile, and anyone with `prefers-reduced-motion: reduce`, get the plain stacked
+  layout: the CSS in `src/styles/global.css` removes the track height and the
+  sticky positioning.
+
+### Hover video (optional)
+
+Add a loop and point the project at it:
+
+```yaml
+video: '/media/artiva.mp4'
+```
+
+`video` is optional in `src/content.config.ts`. The clip crossfades in over the
+still when its case is active, plays muted and pauses when it is not. Keep it a
+6–8 s loop at the same aspect ratio as the cover; without one, the still is used.

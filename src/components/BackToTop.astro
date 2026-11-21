@@ -1,0 +1,78 @@
+---
+---
+
+<button
+  type="button"
+  data-back-to-top
+  data-magnetic="soft"
+  class="label fixed bottom-5 right-5 z-40 flex size-11 items-center justify-center rounded-full border border-[color:var(--hairline)] bg-[color:var(--canvas)]/90 text-[0.625rem] text-ink backdrop-blur-sm transition-all duration-300 hover:border-ink hover:text-brand-ink max-sm:bottom-24 max-sm:right-4"
+  aria-label="Back to top"
+  style="opacity:0;pointer-events:none;transform:translateY(6px)"
+>
+  ↑
+</button>
+
+<script is:inline>
+  (function () {
+    var cleanup = null;
+
+    function initBackToTop() {
+      if (cleanup) {
+        cleanup();
+        cleanup = null;
+      }
+
+      var btn = document.querySelector('[data-back-to-top]');
+      if (!btn) return;
+
+      var hero = document.getElementById('hero');
+      function threshold() {
+        return hero ? hero.offsetHeight * 0.8 : 600;
+      }
+
+      function sync() {
+        var show = window.scrollY > threshold();
+        btn.style.opacity = show ? '1' : '0';
+        btn.style.pointerEvents = show ? 'auto' : 'none';
+        btn.style.transform = show ? 'translateY(0)' : 'translateY(6px)';
+      }
+
+      function onClick() {
+        var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (window.__zarvaLenis && !reduce) {
+          window.__zarvaLenis.scrollTo(0, { duration: 0.8 });
+        } else {
+          window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+        }
+      }
+
+      btn.addEventListener('click', onClick);
+      window.addEventListener('scroll', sync, { passive: true });
+      window.addEventListener('resize', sync);
+      sync();
+
+      cleanup = function () {
+        btn.removeEventListener('click', onClick);
+        window.removeEventListener('scroll', sync);
+        window.removeEventListener('resize', sync);
+      };
+    }
+
+    if (!window.__zarvaBackTopBound) {
+      window.__zarvaBackTopBound = true;
+      document.addEventListener('astro:page-load', initBackToTop);
+      document.addEventListener('astro:before-swap', function () {
+        if (cleanup) {
+          cleanup();
+          cleanup = null;
+        }
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initBackToTop);
+    } else {
+      initBackToTop();
+    }
+  })();
+</script>

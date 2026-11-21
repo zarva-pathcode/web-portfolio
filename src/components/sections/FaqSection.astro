@@ -1,0 +1,68 @@
+---
+import { faqItems } from '../../data/site';
+import type { Locale } from '../../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const isId = locale === 'id';
+const items = faqItems[locale];
+---
+
+<section id="faq" class="border-t border-[color:var(--hairline)] bg-canvas text-ink">
+  <div class="mx-auto max-w-[1440px] px-5 py-20 sm:px-10 lg:px-16 lg:py-28">
+    <p class="label mb-8">
+      <span class="text-brand">07</span> — <span data-scramble="view">FAQ</span>
+    </p>
+    <h2 class="display mb-14 text-[2.25rem] sm:text-[3.25rem]" data-reveal="press" data-split>
+      {isId ? 'Pertanyaan, dijawab.' : 'Questions, answered.'}
+    </h2>
+
+    <div class="border-t border-[color:var(--hairline)]" data-faq-list data-stagger>
+      {
+        items.map(([q, a], i) => {
+          const isOpen = i === 0;
+          const panelId = `faq-panel-${i}`;
+          return (
+            <div
+              data-faq-item
+              data-open={isOpen ? '' : undefined}
+              class="border-b border-[color:var(--hairline)]"
+            >
+              <button
+                type="button"
+                data-faq-trigger
+                aria-expanded={isOpen ? 'true' : 'false'}
+                aria-controls={panelId}
+                class="group flex w-full cursor-pointer items-baseline gap-6 py-5 text-left transition-colors hover:bg-[color:var(--hover)] sm:px-2"
+              >
+                <span class="label w-6 shrink-0 text-brand">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span class="flex-1 text-[1.0625rem] text-ink transition-colors group-hover:text-brand-ink">
+                  {q}
+                </span>
+                <span data-faq-icon class="label text-sm text-brand" aria-hidden="true">
+                  +
+                </span>
+              </button>
+              <div
+                id={panelId}
+                data-faq-panel
+                data-open={isOpen ? '' : undefined}
+                class="faq-panel"
+              >
+                <div class="faq-panel__inner">
+                  <p class="faq-panel__body max-w-[46rem] pb-6 pl-12 text-sm leading-relaxed text-subtle sm:pl-14">
+                    {a}
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        })
+      }
+    </div>
+  </div>
+</section>

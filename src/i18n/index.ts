@@ -10,6 +10,8 @@ const en = {
   'nav.menu': 'Menu',
   'nav.skip': 'Skip to content',
   'nav.theme': 'Switch to Indonesian',
+  'nav.contrastOn': 'Turn off high contrast',
+  'nav.contrastOff': 'Turn on high contrast',
 
   'hero.headline': 'Crafting mobile and web apps that feel effortless to use.',
   'hero.sub':
@@ -39,6 +41,7 @@ const en = {
   'experience.title': 'Work Experience',
   'experience.lede':
     'A chronology of production engineering, design systems and product delivery.',
+  'experience.stepOf': 'Step {current} of {total}',
 
   'projects.eyebrow': 'Selected Works & Case Studies',
   'projects.title': 'Featured Projects.',
@@ -69,8 +72,11 @@ const en = {
   'contact.lede':
     'Got a role, a project, or just a question about how something was built? My inbox is open.',
   'contact.name': 'Name',
+  'contact.nameHint': 'The name you would like to be addressed by.',
   'contact.email': 'Email',
+  'contact.emailHint': 'A working email address, so I can reply to you.',
   'contact.message': 'Message',
+  'contact.messageHint': 'A few lines about the role, the project, or the question.',
   'contact.send': 'Send message',
   'contact.sending': 'Sending…',
   'contact.success': 'Message sent. Thanks — I will get back to you shortly.',
@@ -115,6 +121,8 @@ const id: Record<TranslationKey, string> = {
   'nav.menu': 'Menu',
   'nav.skip': 'Lompat ke konten',
   'nav.theme': 'Ganti ke Inggris',
+  'nav.contrastOn': 'Matikan kontras tinggi',
+  'nav.contrastOff': 'Nyalakan kontras tinggi',
 
   'hero.headline': 'Membangun aplikasi mobile dan web yang terasa mudah dipakai.',
   'hero.sub':
@@ -144,6 +152,7 @@ const id: Record<TranslationKey, string> = {
   'experience.title': 'Pengalaman Kerja',
   'experience.lede':
     'Sejarah rekayasa produksi, design system, dan pengiriman produk.',
+  'experience.stepOf': 'Langkah {current} dari {total}',
 
   'projects.eyebrow': 'Karya Terpilih & Studi Kasus',
   'projects.title': 'Proyek Pilihan.',
@@ -174,8 +183,11 @@ const id: Record<TranslationKey, string> = {
   'contact.lede':
     'Punya lowongan, proyek, atau sekadar penasaran bagaimana sesuatu dibangun? Email saya terbuka.',
   'contact.name': 'Nama',
+  'contact.nameHint': 'Nama yang ingin Anda dipanggil.',
   'contact.email': 'Email',
+  'contact.emailHint': 'Alamat email aktif, agar saya bisa membalas.',
   'contact.message': 'Pesan',
+  'contact.messageHint': 'Beberapa baris tentang lowongan, proyek, atau pertanyaannya.',
   'contact.send': 'Kirim pesan',
   'contact.sending': 'Mengirim…',
   'contact.success': 'Pesan terkirim. Terima kasih — saya akan segera membalas.',

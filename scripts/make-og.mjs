@@ -1,67 +1,44 @@
-// Generates the static OG image (public/og.png) at 1200x630.
-// Run with: node scripts/make-og.mjs
+// Generates public/og.png (1200×630) in the current paper identity.
 import sharp from 'sharp';
-import { mkdirSync } from 'node:fs';
+import fs from 'node:fs';
 
-const W = 1200;
-const H = 630;
-const OUT = 'public/og.png';
-const PORTRAIT = 'src/assets/bg-image.jpg';
+const W = 1200, H = 630;
+const SERIF = 'C:/Users/FUJITSU/AppData/Local/Temp/none.ttf'; // placeholder, replaced below
+const fonts = {
+  serif: 'D:/Zarva/project/REA/web/.fonts/InstrumentSerif-1.ttf',
+  mono: 'D:/Zarva/project/REA/web/.fonts/GeistMono-5.ttf',
+};
 
-mkdirSync('public', { recursive: true });
+const text = async (markup, fontfile) =>
+  sharp({ text: { text: markup, fontfile, rgba: true, dpi: 96 } }).png().toBuffer();
 
-// The OG card typesets in a grotesque available at build time.
-// grotesque that is present on virtually every system. It is the same geometric
-// idea as Space Grotesk, and the card is only ever seen at thumbnail size.
-const SANS = 'Inter Variable, Segoe UI, Arial, Helvetica, sans-serif';
+const base = await sharp({
+  create: { width: W, height: H, channels: 4, background: '#F3EFE6' },
+}).png().toBuffer();
 
-const text = (x, y, size, weight, value, fill, extra = '') => `
-  <text x="${x}" y="${y}" font-family="${SANS}" font-size="${size}"
-        font-weight="${weight}" fill="${fill}" ${extra}>${value}</text>`;
+const name = await text(
+  '<span font="60" foreground="#14110F">Bintang Fadilah</span>\n<span font="60" foreground="#14110F">Ramadhan</span>',
+  fonts.serif
+);
+const role = await text('<span font="19" foreground="#6A6459">MOBILE &amp; FRONTEND DEVELOPER</span>', fonts.mono);
+const brand = await text('<span font="15" foreground="#B4552F">ZARVAISM</span>', fonts.mono);
+const stats = await text('<span font="15" foreground="#5A6247">FLUTTER · REACT · TYPESCRIPT</span>', fonts.mono);
 
-const overlay = Buffer.from(`
-<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="scrim" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%"   stop-color="#000000" stop-opacity="0.98"/>
-      <stop offset="50%"  stop-color="#000000" stop-opacity="0.93"/>
-      <stop offset="100%" stop-color="#000000" stop-opacity="0.72"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="78%" cy="28%" r="52%">
-      <stop offset="0%"   stop-color="#f5f5f7" stop-opacity="0.30"/>
-      <stop offset="100%" stop-color="#f5f5f7" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-
-  <rect width="${W}" height="${H}" fill="#000000"/>
-  <rect width="${W}" height="${H}" fill="url(#glow)"/>
-  <rect width="${W}" height="${H}" fill="url(#scrim)"/>
-
-  ${text(72, 118, 20, 600, 'MOBILE &amp; FRONTEND DEVELOPER', '#f5f5f7', 'letter-spacing="0.18em"')}
-  ${text(72, 214, 74, 700, 'Bintang Fadilah', '#f8fafc', 'letter-spacing="-0.03em"')}
-  ${text(72, 296, 74, 700, 'Ramadhan', '#f8fafc', 'letter-spacing="-0.03em"')}
-  ${text(72, 356, 30, 500, 'Flutter &#183; React &#183; TypeScript &#183; UI/UX', '#94a3b8')}
-
-  <rect x="72" y="404" width="86" height="3" rx="1.5" fill="#f5f5f7"/>
-
-  ${text(72, 470, 38, 700, 'ZARVAISM.', '#86868b', 'letter-spacing="-0.03em"')}
-  ${text(72, 510, 19, 400, 'bintangfara363@gmail.com', '#94a3b8')}
-</svg>
-`);
-
-const portrait = await sharp(PORTRAIT)
-  .resize(W, H, { fit: 'cover', position: 'centre' })
-  .modulate({ brightness: 0.94, saturation: 0.9 })
-  // The source backdrop has a dithered blue gradient that bands once scaled.
-  // A heavy blur costs nothing here because the whole portrait sits behind a
-  // scrim â€” only the silhouette needs to read.
-  .blur(6)
+// halftone portrait, right side
+const portrait = await sharp('design/hero-halftone-soft.png')
+  .resize({ width: 620 })
+  .png()
   .toBuffer();
 
-await sharp(portrait)
-  .composite([{ input: overlay, top: 0, left: 0 }])
-  .png({ quality: 90, compressionLevel: 9 })
-  .toFile(OUT);
+await sharp(base)
+  .composite([
+    { input: portrait, left: 600, top: 30 },
+    { input: brand, left: 72, top: 64 },
+    { input: name, left: 72, top: 190 },
+    { input: role, left: 72, top: 400 },
+    { input: stats, left: 72, top: 470 },
+  ])
+  .png()
+  .toFile('public/og.png');
 
-console.log(`Wrote ${OUT} (${W}x${H})`);
-
+console.log('og.png written', Math.round(fs.statSync('public/og.png').size / 1024), 'KB');

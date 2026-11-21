@@ -1,0 +1,34 @@
+---
+interface Props {
+  items: string[];
+  speed?: number;
+}
+
+const { items, speed = 34 } = Astro.props;
+
+// Guarantee each half-track exceeds ultrawide viewports (>= 2400px) so the loop
+// never exposes empty blank space at any screen width.
+const reps = Math.max(4, Math.ceil(24 / Math.max(1, items.length)));
+const repeated = Array.from({ length: reps }, () => items).flat();
+const scaledDuration = Math.round(speed * (reps / 2));
+---
+
+<div
+  class="overflow-hidden border-y border-[color:var(--hairline)] py-3 [mask-image:linear-gradient(to_right,transparent,black_4%,black_96%,transparent)]"
+  aria-hidden="true"
+>
+  <div class="marquee-track flex w-max" style={`animation-duration:${scaledDuration}s`}>
+    {
+      [0, 1].map(() => (
+        <span class="ticker-copy flex shrink-0 items-center">
+          {repeated.map((t) => (
+            <span class="label flex shrink-0 items-center gap-5 pr-5 text-[0.625rem] tracking-[0.2em] whitespace-nowrap">
+              <span>{t}</span>
+              <span class="text-brand">·</span>
+            </span>
+          ))}
+        </span>
+      ))
+    }
+  </div>
+</div>

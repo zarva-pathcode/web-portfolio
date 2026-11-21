@@ -1,140 +1,148 @@
 ---
 import { Image } from 'astro:assets';
-import { t, type Locale } from '../i18n';
-import heroImage from '../assets/bg-image.jpg';
-import { site, heroDisciplines } from '../data/site';
+import { t, localePath, type Locale } from '../i18n';
+import halftoneLight from '../assets/hero-halftone-light.png';
+import halftoneDark from '../assets/hero-halftone-dark.png';
+import { site, heroTicker, heroStats } from '../data/site';
+import Ticker from './Ticker.astro';
 
 interface Props {
   locale: Locale;
 }
 const { locale } = Astro.props;
 const tr = t(locale);
-
-// Split at build time so the word-stagger costs no runtime JS.
-const words = tr['hero.headline'].split(' ');
+const isId = locale === 'id';
 ---
 
-<section
-  id="hero"
-  class="relative flex min-h-[94vh] flex-col justify-between pt-28 pb-12"
->
-  <!--
-    Hero portrait (port from heynesh.com).
-
-    This frame is `position: absolute` and lives inside the hero section, so it
-    scrolls away with it. It used to be `fixed`, which pinned the photo to the
-    viewport: it stayed put while the page moved under it, and the whole
-    scroll-driven fade and shrink machinery existed only to manage a frame that
-    was never where it appeared to be. Absolute is both simpler and what the
-    design always meant — the portrait belongs to the hero, so it leaves when
-    the hero does.
-
-    Transform ownership rule strictly respected:
-      - .hero-parallax (outer frame): no scroll-driven transform any more.
-      - .hero-intro (inner frame): owns the 3D cursor-follow transform (rAF
-        lerp).
-      Three nested elements, at most one visual channel between them.
-  -->
-  <div
-    class="hero-parallax pointer-events-none absolute inset-0 z-0 flex select-none items-center justify-end overflow-hidden"
-  >
-    {/*
-      The static `opacity-45` / `lg:opacity-90` pair is gone. A fixed opacity on
-      this frame multiplied against the scroll-driven fade on
-      `.hero-ambient-img`, dimming the portrait at every scroll position and
-      stopping it reaching full strength even while the hero was on screen. The
-      scrims below carry the contrast job on their own.
-    */}
-    <div class="hero-intro relative h-full w-full overflow-hidden lg:w-[46%] lg:pr-[6%]">
-      {/*
-        The picture drifts inside its frame. `data-parallax` hands this to the
-        existing motion.ts loop, so the hero uses the same mechanism as the
-        project screenshots rather than a second, parallel implementation.
-
-        `scale-[1.14]` is the overshoot: without it the drift would pull the
-        photo off the top or bottom of the frame and expose an edge. The frame
-        itself is `absolute`, so it scrolls away with the hero — the drift is on
-        the image only.
-      */}
-      <Image
-        src={heroImage}
-        alt={site.name}
-        widths={[720, 1080, 1440]}
-        sizes="(min-width: 1024px) 46vw, 100vw"
-        loading="eager"
-        fetchpriority="high"
-        data-parallax="56"
-        class="hero-ambient-img h-full w-full scale-[1.14] object-cover object-center will-change-transform"
-      />
-      {/*
-        Both scrims sit on `.hero-scrim`, which carries the same scroll-driven
-        fade as the image above.
-
-        They used to be bare `absolute inset-0` divs at full opacity. Fading the
-        image alone was not enough: the scrims are `bg-linear-to-r` and
-        `bg-linear-to-t` in near-black, and at full strength they painted a
-        60vw dark rectangle over the right side of the page for the rest of the
-        session. That is the dark block over the #archive table — the image was
-        gone but the scrims stayed, which is why the text under them was still
-        unreadable after the portrait fade was fixed.
-      */}
-      <div class="hero-scrim absolute inset-0 bg-linear-to-r from-black via-black/80 to-black/30"></div>
-      <div class="hero-scrim absolute inset-0 bg-linear-to-t from-black via-transparent to-black/70"></div>
-    </div>
-  </div>
-
-  <!-- Headline block -->
-  <div class="relative z-10 my-auto w-full px-6 pt-16 md:pt-24 md:pl-[max(1.5rem,calc((100vw-72rem)/2+1.5rem))]">
-    <div class="max-w-3xl">
-      <div class="mb-8 inline-flex items-center gap-2.5">
-        <span class="font-mono text-xs font-medium tracking-widest text-subtle uppercase">
-          {site.name}
-        </span>
-        <span class="text-white/20">•</span>
-        <span class="font-mono text-xs text-subtle">Portfolio ©2026</span>
-      </div>
-
-      <h1
-        class="text-4xl leading-[1.03] font-semibold tracking-tighter text-ink sm:text-6xl md:text-7xl"
+<section id="hero" class="relative flex min-h-svh flex-col bg-canvas text-ink">
+  <div class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col">
+    <div class="relative flex min-w-0 flex-1 flex-col justify-between px-6 pt-8 pb-8 sm:px-10 sm:pt-12 lg:px-16">
+      <!-- quiet editorial top meta strip (scrolls naturally, no sticky top navbar) -->
+      <div
+        data-hero-eyebrow
+        class="mb-10 flex flex-wrap items-center justify-between gap-4 sm:mb-14"
       >
-        {
-          words.map((word, i) => (
-            <span class="word-mask">
-              <span class="word" style={`--i:${i}`}>
-                {word}
-                {i < words.length - 1 && ' '}
+        <p class="label">
+          <span class="text-brand">01</span> — <span data-scramble="view">{site.role.toUpperCase()}</span>
+        </p>
+
+        <div class="flex items-center gap-5">
+          <span class="label inline-flex items-center gap-2 text-[0.5625rem] text-signal">
+            <span class="size-1.5 rounded-full bg-signal" aria-hidden="true"></span>
+            {site.availability[locale]}
+          </span>
+          <a
+            href={localePath(locale, '/cv')}
+            data-scramble="hover"
+            class="label hidden text-[0.5625rem] text-ink transition-colors hover:text-brand sm:inline-block"
+          >
+            {isId ? 'CV ↗' : 'CV ↗'}
+          </a>
+        </div>
+      </div>
+
+      <div class="grid min-w-0 flex-1 items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(300px,42%)] lg:gap-6">
+        <!-- copy -->
+        <div class="relative z-10">
+          <h1 class="display text-[2.75rem] sm:text-[4.25rem] lg:text-[5rem]" data-split>
+            {tr['hero.headline']}
+          </h1>
+
+          <p
+            data-hero-sub
+            class="mt-7 max-w-[32rem] text-base leading-relaxed text-subtle sm:text-[1.0625rem]"
+          >
+            {tr['hero.sub']}
+          </p>
+
+          <div data-hero-cta class="mt-9 flex flex-wrap items-center gap-3">
+            <a href="#projects" data-magnetic class="btn btn--solid btn-roll">
+              <span class="btn-roll__track">
+                <span class="btn-roll__text">{tr['hero.ctaPrimary']}</span>
+                <span class="btn-roll__text btn-roll__text--clone" aria-hidden="true">
+                  {tr['hero.ctaPrimary']}
+                </span>
               </span>
-            </span>
-          ))
-        }
-      </h1>
+            </a>
+            <a href="#contact" data-magnetic class="btn btn--ghost btn-roll">
+              <span class="btn-roll__track">
+                <span class="btn-roll__text">{tr['hero.ctaSecondary']}</span>
+                <span class="btn-roll__text btn-roll__text--clone" aria-hidden="true">
+                  {tr['hero.ctaSecondary']}
+                </span>
+              </span>
+            </a>
+          </div>
 
-      <p class="mt-8 max-w-2xl text-lg leading-relaxed font-normal text-subtle md:text-xl">
-        {tr['hero.sub']}
-      </p>
+          <dl data-hero-stats class="mt-12 flex flex-wrap items-end gap-12">
+            {
+              heroStats.map((stat) => (
+                <div>
+                  <dd
+                    class="display text-[3rem] leading-none"
+                    data-odometer={stat.value}
+                  >
+                    {stat.value}
+                  </dd>
+                  <dt class="label mt-2">{stat.label[locale]}</dt>
+                </div>
+              ))
+            }
+          </dl>
+        </div>
 
-      <div class="mt-10 flex flex-wrap items-center gap-4">
-        <a href="#projects" class="btn-primary">
-          {tr['hero.ctaPrimary']}
-        </a>
-        <a href="#contact" class="btn-ghost">{tr['hero.ctaSecondary']}</a>
+        <!-- halftone portrait: one per ground, crossfaded on theme switch -->
+        <div class="relative">
+          <div
+            class="relative mx-auto aspect-[1140/780] w-full max-w-[640px] lg:mr-0"
+            data-portrait
+            data-reveal="screen"
+          >
+            <Image
+              src={halftoneLight}
+              alt={`Portrait of ${site.name}, rendered as a clay halftone`}
+              widths={[600, 900, 1140]}
+              sizes="(min-width: 1024px) 40vw, 90vw"
+              loading="eager"
+              fetchpriority="high"
+              class="halftone halftone--light absolute inset-0 h-full w-full object-contain"
+            />
+            <Image
+              src={halftoneDark}
+              alt=""
+              aria-hidden="true"
+              widths={[600, 900, 1140]}
+              sizes="(min-width: 1024px) 40vw, 90vw"
+              loading="eager"
+              class="halftone halftone--dark absolute inset-0 h-full w-full object-contain"
+            />
+          </div>
+          <p class="label mt-6 text-brand" data-scramble="view">Halftone / my-profile</p>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Discipline strip -->
-  <div class="relative z-10 mx-6 mt-20 md:mt-28 md:mx-auto md:w-full md:max-w-[calc(72rem-3rem)]">
-    <div class="reveal-group grid grid-cols-2 gap-8 border-t border-white/10 pt-8 md:grid-cols-4">
-      {
-        heroDisciplines.map((item) => (
-          <div class="space-y-1.5">
-            <span class="block font-mono text-[11px] tracking-widest text-muted">{item.index}</span>
-            <p class="text-sm font-medium tracking-tight text-ink">{item.title}</p>
-            <p class="text-xs text-subtle">{item.sub}</p>
-          </div>
-        ))
-      }
-    </div>
+  <div class="mt-6">
+    <Ticker items={[...heroTicker]} speed={42} />
   </div>
-
 </section>
+
+<style>
+  .halftone {
+    transition: opacity 420ms var(--ease-enter);
+  }
+  :global(:root[data-theme='paper']) .halftone--dark,
+  :global(:root:not([data-theme])) .halftone--dark {
+    opacity: 0;
+  }
+  :global(:root[data-theme='night']) .halftone--light {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .halftone {
+      transition: none;
+    }
+  }
+</style>

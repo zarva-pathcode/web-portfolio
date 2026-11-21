@@ -1,231 +1,212 @@
 ---
 import Page from '../layouts/Page.astro';
 import { getCollection } from 'astro:content';
-import { site, social } from '../data/site';
-import { t, type Locale } from '../i18n';
+import { site, social, cvData } from '../data/site';
+import { type Locale } from '../i18n';
 
 interface Props {
   locale: Locale;
 }
 const { locale } = Astro.props;
-const tr = t(locale);
+const isId = locale === 'id';
 
-const roles = (await getCollection('experiences')).sort(
-  (a, b) => a.data.order - b.data.order,
-);
-const projects = (await getCollection('projects')).sort(
-  (a, b) => a.data.order - b.data.order,
-);
+const roles = (await getCollection('experiences')).sort((a, b) => a.data.order - b.data.order);
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 
-const education = [
-  { school: 'Universitas Amikom Purwokerto', degree: 'Sistem Informasi', period: '2023 — Present' },
-  { school: 'SMK Negeri 1 Purwokerto', degree: 'Rekayasa Perangkat Lunak', period: '2021' },
-];
-
-const certifications = [
-  {
-    title: 'HKI — Aplikasi Bank Sampah ReBio',
-    issuer: 'Ditjen Kekayaan Intelektual, Kumham RI',
-    period: '2024',
-  },
-  {
-    title: 'Dicoding Academy — Flutter Developer Expert',
-    issuer: 'Clean architecture · TDD · BLoC · CI/CD',
-    period: '2022',
-  },
-];
-
-const organisation = [
-  { role: 'Mobile Secretary · Programming Division — UKM Intermedia', period: '2023 — 2025' },
-  { role: 'Competition & Events Coordinator — Intermedia IT Competition', period: '2024 — 2025' },
-];
-
-const skillGroups = [
-  { label: 'Languages & Frameworks', items: 'Dart (Flutter), TypeScript, JavaScript, React, PHP (Laravel), HTML5' },
-  { label: 'Styling', items: 'CSS3, Tailwind CSS' },
-  { label: 'Architecture & Practice', items: 'Clean Architecture, BLoC, REST API, Git' },
-  { label: 'Platforms', items: 'Mobile (Android), Responsive Web, Desktop Client' },
-  { label: 'Tools', items: 'Postman, Google Play Console, VS Code, Figma, Notion' },
-  { label: 'Soft skills', items: 'Innovative, time management, teamwork, problem solving, critical thinking' },
-];
+const contactLine = `${site.email} · ${site.location}`;
 ---
 
-<Page title={tr['cv.title']} description={tr['cv.lede']}>
-  <div class="canvas py-20 md:py-28">
-    <header class="print-plain reveal flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <span class="eyebrow">{tr['cv.title']}</span>
-        <h1 class="mt-4 text-4xl font-semibold tracking-tighter text-ink sm:text-5xl md:text-6xl">
-          {site.name}
-        </h1>
-        <p class="mt-3 text-lg text-ink">{tr['hero.headline']}</p>
-        <p class="mt-2 text-sm text-subtle">{site.location}</p>
-      </div>
-
-      <button
-        type="button"
-        data-print
-        class="no-print inline-flex shrink-0 items-center gap-2 self-start rounded-full border border-white/10 px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-white/30"
-      >
-        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-          <path d="M6 14h12v8H6z" />
-        </svg>
-        {tr['cv.print']}
-      </button>
-    </header>
-
-    <div class="print-plain mt-14 flex flex-col gap-14">
-      <section class="reveal">
-        <h2 class="eyebrow">{tr['cv.summary']}</h2>
-        <p class="mt-4 max-w-3xl text-sm leading-relaxed text-subtle">{site.description}</p>
-      </section>
-
-      <section class="reveal">
-        <h2 class="eyebrow">{tr['cv.experience']}</h2>
-        <ul class="mt-6 flex flex-col gap-7">
-          {
-            roles.map((role) => (
-              <li>
-                <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
-                  <h3 class="text-sm font-semibold text-ink">
-                    {role.data.role} · {role.data.company}
-                  </h3>
-                  <p class="font-mono text-[11px] tracking-wider whitespace-nowrap text-subtle">
-                    {role.data.period}
-                  </p>
-                </div>
-                <p class="mt-0.5 text-xs text-subtle">
-                  {role.data.location} · {role.data.type}
-                </p>
-                <ul class="mt-2.5 flex flex-col gap-1.5">
-                  {role.data.points.map((point) => (
-                    <li class="flex gap-2.5 text-[13px] leading-relaxed text-subtle">
-                      <span class="print-dot mt-2 size-1 shrink-0 rounded-full bg-ink/40" aria-hidden="true" />
-                      <span>{point}</span>
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ))
-          }
-        </ul>
-      </section>
-
-      <section class="reveal">
-        <h2 class="eyebrow">{tr['cv.projects']}</h2>
-        <ul class="mt-6 flex flex-col gap-5">
-          {
-            projects.map((project) => (
-              <li>
-                <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
-                  <h3 class="text-sm font-semibold text-ink">
-                    {project.data.title} · {project.data.role}
-                  </h3>
-                  <p class="font-mono text-[11px] tracking-wider whitespace-nowrap text-subtle">
-                    {project.data.year}
-                  </p>
-                </div>
-                <p class="mt-0.5 font-mono text-[11px] text-subtle">{project.data.stack.join(' · ')}</p>
-                <p class="mt-2 text-[13px] leading-relaxed text-subtle">{project.data.summary}</p>
-              </li>
-            ))
-          }
-        </ul>
-      </section>
-
-      <div class="grid gap-12 sm:grid-cols-2">
-        <section class="reveal">
-          <h2 class="eyebrow">{tr['cv.education']}</h2>
-          <ul class="mt-5 flex flex-col gap-4">
-            {
-              education.map((edu) => (
-                <li class="border-l border-white/10 pl-4">
-                  <p class="text-sm font-medium text-ink">{edu.school}</p>
-                  <p class="text-[13px] text-subtle">{edu.degree}</p>
-                  <p class="mt-1 font-mono text-[11px] tracking-wider text-subtle">{edu.period}</p>
-                </li>
-              ))
-            }
-          </ul>
-        </section>
-
-        <section class="reveal">
-          <h2 class="eyebrow">{tr['cv.certifications']}</h2>
-          <ul class="mt-5 flex flex-col gap-4">
-            {
-              certifications.map((cert) => (
-                <li class="border-l border-white/10 pl-4">
-                  <p class="text-sm font-medium text-ink">{cert.title}</p>
-                  <p class="text-[13px] text-subtle">{cert.issuer}</p>
-                  <p class="mt-1 font-mono text-[11px] tracking-wider text-subtle">{cert.period}</p>
-                </li>
-              ))
-            }
-          </ul>
-        </section>
-      </div>
-
-      <section class="reveal">
-        <h2 class="eyebrow">{tr['cv.organisation']}</h2>
-        <ul class="mt-5 flex flex-col gap-3">
-          {
-            organisation.map((org) => (
-              <li class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
-                <span class="text-[13px] text-subtle">{org.role}</span>
-                <span class="font-mono text-[11px] tracking-wider whitespace-nowrap text-subtle">
-                  {org.period}
-                </span>
-              </li>
-            ))
-          }
-        </ul>
-      </section>
-
-      <section class="reveal">
-        <h2 class="eyebrow">{tr['cv.skills']}</h2>
-        <dl class="mt-5 grid gap-4 sm:grid-cols-2">
-          {
-            skillGroups.map((group) => (
-              <div>
-                <dt class="text-[13px] font-medium text-ink">{group.label}</dt>
-                <dd class="mt-1 text-[13px] leading-relaxed text-subtle">{group.items}</dd>
-              </div>
-            ))
-          }
-        </dl>
-      </section>
-
-      <section class="reveal border-t border-white/10 pt-8">
-        <h2 class="eyebrow">{tr['contact.index']}</h2>
-        <div class="mt-4 grid gap-1 text-[13px] text-subtle sm:grid-cols-2">
-          <p>
-            Email:{' '}
-            <a href={`mailto:${site.email}`} class="text-ink">
-              {site.email}
-            </a>
+<Page title={`CV — ${site.name}`} description={site.description}>
+  <article class="bg-canvas text-ink">
+    <div class="mx-auto max-w-[1440px] px-5 py-14 sm:px-10 lg:px-16">
+      <!-- header -->
+      <div class="flex flex-wrap items-start justify-between gap-6 border-b border-[color:var(--hairline)] pb-10">
+        <div>
+          <p class="label mb-5">
+            <span class="text-brand" data-scramble="view">{isId ? 'DAFTAR RIWAYAT HIDUP' : 'CURRICULUM VITAE'}</span> — {cvData.year}
           </p>
-          {
-            social.map((s) => (
-              <p>
-                {s.label}:{' '}
-                <a
-                  href={s.href}
-                  target="_blank"
-                  rel="me noopener noreferrer"
-                  class="break-all text-ink"
-                >
-                  {s.handle}
-                </a>
-              </p>
-            ))
-          }
+          <h1 class="display text-[2.5rem] leading-[1.02] sm:text-[4rem]" data-split>{site.name}</h1>
+          <p class="label mt-5">{site.role} — Flutter &amp; React</p>
+          <p class="label mt-2 normal-case tracking-normal">{contactLine}</p>
         </div>
-      </section>
+
+        <a
+          href={cvData.pdfHref}
+          download
+          data-magnetic
+          class="btn btn--ghost btn-roll h-10 px-5 text-[0.5625rem] no-print"
+        >
+          <span class="btn-roll__track">
+            <span class="btn-roll__text">{isId ? 'UNDUH PDF' : 'DOWNLOAD PDF'}</span>
+            <span class="btn-roll__text btn-roll__text--clone" aria-hidden="true">
+              {isId ? 'UNDUH PDF' : 'DOWNLOAD PDF'}
+            </span>
+          </span>
+        </a>
+      </div>
+
+      <div class="mt-12 grid gap-14 lg:grid-cols-[1.45fr_1fr]">
+        <!-- main column -->
+        <div>
+          <section>
+            <h2 class="label mb-6 text-brand">{isId ? 'PENGALAMAN' : 'EXPERIENCE'}</h2>
+            <ol class="space-y-9">
+              {
+                roles.map((r) => (
+                  <li>
+                    <div class="flex flex-wrap items-baseline justify-between gap-2">
+                      <h3 class="text-[1.0625rem] text-ink">{r.data.company}</h3>
+                      <span class="label whitespace-nowrap">{r.data.period}</span>
+                    </div>
+                    <p class="label mt-1">
+                      {r.data.role} · {r.data.type} · {r.data.location}
+                    </p>
+                    <ul class="mt-3 space-y-1.5">
+                      {r.data.points.map((p) => (
+                        <li class="flex gap-3 text-[0.8125rem] leading-relaxed text-subtle">
+                          <span class="text-brand">—</span>
+                          <span>{p}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                ))
+              }
+            </ol>
+          </section>
+
+          <section class="mt-12 border-t border-[color:var(--hairline)] pt-10">
+            <h2 class="label mb-6 text-brand">{isId ? 'PROYEK PILIHAN' : 'SELECTED PROJECTS'}</h2>
+            <ul class="space-y-4">
+              {
+                projects.map((p) => (
+                  <li class="flex flex-wrap items-baseline justify-between gap-2">
+                    <span class="text-[0.875rem] text-ink">
+                      {p.data.title} — {p.data.category}
+                    </span>
+                    <span class="label">{p.data.year}</span>
+                  </li>
+                ))
+              }
+            </ul>
+          </section>
+        </div>
+
+        <!-- side column -->
+        <div class="space-y-10">
+          <section>
+            <h2 class="label mb-6 text-brand">SKILLS</h2>
+            <dl class="space-y-3">
+              {
+                cvData.skillGroups.map((g) => (
+                  <div>
+                    <dt class="label text-ink">{g.label}</dt>
+                    <dd class="mt-1 text-[0.8125rem] leading-relaxed text-subtle">{g.items}</dd>
+                  </div>
+                ))
+              }
+            </dl>
+          </section>
+
+          <section class="border-t border-[color:var(--hairline)] pt-8">
+            <h2 class="label mb-6 text-brand">{isId ? 'PENDIDIKAN' : 'EDUCATION'}</h2>
+            <ul class="space-y-4">
+              {
+                cvData.education.map((e) => (
+                  <li>
+                    <p class="text-[0.875rem] text-ink">{e.school}</p>
+                    <p class="text-[0.8125rem] text-subtle">{e.degree[locale]}</p>
+                    <p class="label mt-1">{e.period}</p>
+                  </li>
+                ))
+              }
+            </ul>
+          </section>
+
+          <section class="border-t border-[color:var(--hairline)] pt-8">
+            <h2 class="label mb-6 text-brand">{isId ? 'PENGHARGAAN' : 'RECOGNITION'}</h2>
+            <ul class="space-y-4">
+              {
+                cvData.certifications.map((c) => (
+                  <li>
+                    <p class="text-[0.875rem] text-ink">{c.title}</p>
+                    <p class="text-[0.8125rem] text-subtle">{c.issuer}</p>
+                    <p class="label mt-1">{c.period}</p>
+                  </li>
+                ))
+              }
+            </ul>
+          </section>
+
+          <section class="border-t border-[color:var(--hairline)] pt-8">
+            <h2 class="label mb-6 text-brand">{isId ? 'ORGANISASI' : 'ORGANISATION'}</h2>
+            <ul class="space-y-3">
+              {
+                cvData.organisation.map((o) => (
+                  <li>
+                    <p class="text-[0.8125rem] text-subtle">{o.role[locale]}</p>
+                    <p class="label mt-1">{o.period}</p>
+                  </li>
+                ))
+              }
+            </ul>
+          </section>
+
+          <section class="border-t border-[color:var(--hairline)] pt-8">
+            <h2 class="label mb-6 text-brand">LINKS</h2>
+            <ul class="space-y-2">
+              {
+                social.map((s) => (
+                  <li>
+                    <a
+                      href={s.href}
+                      target="_blank"
+                      rel="me noopener noreferrer"
+                      class="label normal-case tracking-normal text-ink hover:text-brand-ink"
+                    >
+                      {s.handle}
+                    </a>
+                  </li>
+                ))
+              }
+            </ul>
+          </section>
+        </div>
+      </div>
+
+      <p class="label mt-16 border-t border-[color:var(--hairline)] pt-6">
+        {isId
+          ? 'HALAMAN INI SIAP CETAK — CMD/CTRL + P MENGHASILKAN PDF YANG SAMA'
+          : 'THIS PAGE IS PRINT-READY — CMD/CTRL + P PRODUCES THE SAME PDF'}
+      </p>
     </div>
-  </div>
+  </article>
 </Page>
 
-<script>
-  document.querySelector('[data-print]')?.addEventListener('click', () => window.print());
-</script>
+<style>
+  @media print {
+    :global(header),
+    :global(footer),
+    :global(aside),
+    .no-print {
+      display: none !important;
+    }
+    :global(:root) {
+      --canvas: #ffffff;
+      --ink: #111111;
+      --subtle: #333333;
+      --brand: #8a3a1e;
+      --hairline: rgba(0, 0, 0, 0.25);
+    }
+    :global(body) {
+      background: #fff !important;
+      color: #111 !important;
+    }
+    article {
+      padding: 0 !important;
+    }
+    section {
+      break-inside: avoid;
+    }
+  }
+</style>

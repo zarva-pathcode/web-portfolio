@@ -1,0 +1,57 @@
+---
+import { archive } from '../../data/site';
+import type { Locale } from '../../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const isId = locale === 'id';
+
+const head = isId
+  ? ['TAHUN', 'PROYEK', 'STACK', 'ARTEFAK']
+  : ['YEAR', 'PROJECT', 'STACK', 'ARTIFACT'];
+
+const years = archive.map((a) => Number(a.year)).filter((y) => !Number.isNaN(y));
+const minYear = years.length ? Math.min(...years) : '';
+const maxYear = years.length ? Math.max(...years) : '';
+const yearSpan = minYear && maxYear ? (minYear === maxYear ? `${minYear}` : `${minYear}—${maxYear}`) : '';
+const summaryLine = isId
+  ? `${archive.length} proyek dirilis${yearSpan ? ` · ${yearSpan}` : ''}`
+  : `${archive.length} shipped projects${yearSpan ? ` · ${yearSpan}` : ''}`;
+---
+
+<section id="other" class="border-t border-[color:var(--hairline)] bg-canvas text-ink">
+  <div class="mx-auto max-w-[1440px] px-5 py-20 sm:px-10 lg:px-16 lg:py-28">
+    <p class="label mb-8">
+      <span class="text-brand">06</span> — <span data-scramble="view">{isId ? 'PROYEK LAIN' : 'OTHER PROJECTS'}</span>
+    </p>
+    <h2 class="display mb-4 text-[2.25rem] sm:text-[3.25rem]" data-reveal="press" data-split>
+      {isId ? 'Proyek lain.' : 'Other projects.'}
+    </h2>
+    <p class="label mb-14">{summaryLine}</p>
+
+    <div class="border-t border-[color:var(--hairline)]" data-stagger>
+      <div class="hidden grid-cols-[6rem_1fr_1fr_12rem] gap-6 border-b border-[color:var(--hairline)] py-3 sm:grid sm:px-3">
+        {head.map((h) => <span class="label">{h}</span>)}
+      </div>
+
+      <ul>
+        {
+          archive.map((item) => (
+            <li class="border-b border-[color:var(--hairline)]">
+              <div class="group grid grid-cols-1 gap-1 py-5 transition-colors hover:bg-[color:var(--hover)] sm:grid-cols-[6rem_1fr_1fr_12rem] sm:items-baseline sm:gap-6 sm:px-3">
+                <span class="numeral text-base text-subtle">{item.year}</span>
+                <span class="text-[1.0625rem] text-ink transition-transform duration-300 group-hover:translate-x-1">
+                  {item.project}
+                </span>
+                <span class="label">{item.category} · {item.stack}</span>
+                <span class="label text-signal">{item.artifact}</span>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+</section>

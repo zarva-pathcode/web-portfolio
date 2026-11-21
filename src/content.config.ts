@@ -20,6 +20,9 @@ const projects = defineCollection({
       summary: z.string(),
       cover: image(),
       coverAlt: z.string(),
+      /** Optional 6–8 s loop, public path (e.g. /media/artiva.mp4). Shown on
+       *  hover/pin instead of the still once it exists. */
+      video: z.string().optional(),
       coverPosition: z.string().default('center'),
       // Covers keep their natural aspect ratio via `h-auto`. There is no fit
       // toggle: every one of them is a real screenshot that must not be cropped.

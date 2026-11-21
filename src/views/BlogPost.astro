@@ -33,7 +33,7 @@ const alternates = { [post.data.lang]: localePath(post.data.lang, `/blog/${post.
   article
   alternates={alternates}
 >
-  <article class="canvas py-20 md:py-28">
+  <article class="mx-auto max-w-[1440px] px-5 py-20 sm:px-10 lg:px-16 lg:py-28">
     <a
       href={localePath(locale, '/blog')}
       class="group inline-flex items-center gap-2 text-sm text-subtle transition-colors hover:text-ink"
@@ -56,17 +56,17 @@ const alternates = { [post.data.lang]: localePath(post.data.lang, `/blog/${post.
           )
         }
       </p>
-      <h1 class="mt-5 text-4xl font-semibold tracking-tighter text-ink sm:text-5xl md:text-6xl">
+      <h1 class="display mt-5 text-[2.25rem] sm:text-[3rem] md:text-[3.5rem]">
         {post.data.title}
       </h1>
       <p class="mt-6 text-base leading-relaxed text-subtle md:text-lg">{post.data.description}</p>
     </header>
 
-    <div class="prose prose-invert reveal mt-14 max-w-3xl">
+    <div class="prose reveal mt-14 max-w-3xl">
       <Content />
     </div>
 
-    <div class="mt-16 border-t border-white/10 pt-8">
+    <div class="mt-16 border-t border-[color:var(--hairline)] pt-8">
       <a
         href={localePath(locale, '/blog')}
         class="group inline-flex items-center gap-2 text-sm font-medium text-ink"

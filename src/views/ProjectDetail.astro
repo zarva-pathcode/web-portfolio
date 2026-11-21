@@ -1,180 +1,215 @@
 ---
-import { render } from 'astro:content';
+import { Image } from 'astro:assets';
 import type { CollectionEntry } from 'astro:content';
-import BlurImage from '../components/BlurImage.astro';
 import Page from '../layouts/Page.astro';
-import { t, localePath, type Locale } from '../i18n';
+import { localePath, type Locale } from '../i18n';
 
 interface Props {
   project: CollectionEntry<'projects'>;
   locale: Locale;
   next?: { id: string; title: string };
+  index?: number;
+  total?: number;
 }
 
-const { project, locale, next } = Astro.props;
-const tr = t(locale);
-const { Content } = await render(project);
+const { project, locale, next, index = 1, total = 3 } = Astro.props;
+const isId = locale === 'id';
+const d = project.data;
+
+const spec = [
+  { k: isId ? 'Perangkat' : 'Device', v: d.platform },
+  { k: 'Stack', v: d.stack.slice(0, 4).join(' · ') },
+  { k: isId ? 'Tahun' : 'Year', v: String(d.year), numeral: true },
+  { k: 'Role', v: d.role },
+];
 
 const blocks = [
-  { label: tr['projects.problem'], body: project.data.problem },
-  { label: tr['projects.approach'], body: project.data.approach },
-  { label: tr['projects.result'], body: project.data.result },
-] as const;
+  { n: '01', k: isId ? 'MASALAH' : 'PROBLEM', v: d.problem },
+  { n: '02', k: isId ? 'PENDEKATAN' : 'APPROACH', v: d.approach },
+  { n: '03', k: isId ? 'HASIL' : 'RESULT', v: d.result },
+];
 ---
 
-<Page
-  title={`${project.data.title} — ${project.data.role}`}
-  description={project.data.summary}
->
-  <article class="canvas py-20 md:py-28">
-    <a
-      href={localePath(locale, '/#projects')}
-      class="group inline-flex items-center gap-2 text-sm text-subtle transition-colors hover:text-ink"
-    >
-      <svg viewBox="0 0 24 24" class="size-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M19 12H5M11 18l-6-6 6-6" />
-      </svg>
-      {tr['projects.back']}
-    </a>
-
-    <header class="mt-12 grid grid-cols-1 gap-10 border-b border-white/10 pb-14 lg:grid-cols-12 lg:gap-16">
-      <div class="lg:col-span-7">
-        <div class="flex flex-wrap items-center gap-2.5 font-mono text-xs text-subtle">
-          <span class="font-medium tracking-wider uppercase">
-            <span class="text-accent">{project.data.year}</span>
-            <span class="text-ink"> · {project.data.category}</span>
-          </span>
-          <span>•</span>
-          <span>{project.data.platform}</span>
-        </div>
-        <h1 class="mt-5 text-4xl font-semibold tracking-tighter text-ink sm:text-5xl md:text-6xl">
-          {project.data.title}
-        </h1>
-        <p class="mt-4 font-mono text-xs tracking-wider text-subtle uppercase">
-          {project.data.role}
-        </p>
-        <p class="mt-6 max-w-2xl text-base leading-relaxed text-subtle md:text-lg">
-          {project.data.summary}
-        </p>
+<Page title={`${d.title} — ${d.role}`} description={d.summary}>
+  <article class="bg-canvas text-ink">
+    <div class="mx-auto max-w-[1440px] px-5 sm:px-10 lg:px-16">
+      <!-- top bar -->
+      <div class="flex items-center justify-between border-b border-[color:var(--hairline)] py-4">
+        <a
+          href={localePath(locale, '/#projects')}
+          data-scramble="hover"
+          class="label transition-colors hover:text-ink"
+        >
+          ← {isId ? 'SEMUA KARYA' : 'ALL WORK'}
+        </a>
+        <span class="label text-brand">{String(index).padStart(2, '0')} / {String(total).padStart(2, '0')}</span>
       </div>
 
-      <dl class="grid grid-cols-1 gap-6 lg:col-span-5 lg:border-l lg:border-white/10 lg:pl-10">
+      <!-- title block -->
+      <header class="pt-14 pb-12">
+        <p class="label mb-6">
+          <span class="text-brand" data-scramble="view">{isId ? 'STUDI KASUS' : 'CASE STUDY'}</span> — {d.category}
+        </p>
+        <h1 class="display text-[3.25rem] leading-[0.95] sm:text-[6rem] lg:text-[8rem]" data-split>
+          {d.title}
+        </h1>
+        <p class="label mt-8">
+          {d.year} · {d.role} · {d.platform}
+        </p>
+      </header>
+
+      <!-- cover -->
+      <figure class="border border-[color:var(--hairline)] bg-[color:var(--surface)] p-4 sm:p-8" data-reveal="screen">
+        <Image
+          src={d.cover}
+          alt={d.coverAlt}
+          widths={[720, 1200, 1600]}
+          sizes="(min-width: 1024px) 85vw, 95vw"
+          class="mx-auto h-auto w-full object-contain"
+          loading="eager"
+        />
+      </figure>
+
+      <!-- spec sheet -->
+      <dl
+        class="mt-10 grid grid-cols-2 gap-x-8 gap-y-6 border-b border-[color:var(--hairline)] pb-10 sm:grid-cols-4"
+        data-stagger
+      >
         {
-          project.data.metrics.map((metric) => (
+          spec.map((s) => (
             <div>
-              <dt class="font-mono text-2xl font-semibold tracking-tight text-ink">{metric.value}</dt>
-              <dd class="mt-0.5 font-mono text-[11px] tracking-wider text-subtle uppercase">
-                {metric.label}
-              </dd>
+              <dt class="label mb-2">{s.k}</dt>
+              {s.numeral ? (
+                <dd class="numeral text-lg text-brand">{s.v}</dd>
+              ) : (
+                <dd class="text-[0.9375rem] text-ink">{s.v}</dd>
+              )}
             </div>
           ))
         }
       </dl>
-    </header>
 
-    {/*
-      Same reasoning as the featured list: the covers have four different aspect
-      ratios between 0.61 and 1.41, so forcing 16/10 cropped them. `h-auto` keeps
-      the natural ratio and `max-h-[70vh]` still stops a tall portrait from
-      dominating the viewport.
-    */}
-    <figure class="group/cover zoom-frame mt-14 overflow-hidden rounded-2xl border border-white/10 bg-surface p-3 md:p-5">
-      <BlurImage
-        src={project.data.cover}
-        lqip={project.data.lqip}
-        alt={project.data.coverAlt}
-        widths={[720, 1280, 1920]}
-        sizes="(min-width: 1152px) 68rem, 100vw"
-        loading="eager"
-        fetchpriority="high"
-        objectPosition={project.data.coverPosition}
-        imgClass="h-auto max-h-[70vh] w-full"
-      />
-    </figure>
+      <!-- lede -->
+      <p class="display max-w-[54rem] py-14 text-[1.75rem] leading-[1.25] sm:text-[2.5rem]" data-reveal="ink">
+        {d.summary}
+      </p>
 
-    <div class="mt-14 grid grid-cols-1 gap-10 border-b border-white/10 pb-14 lg:grid-cols-3 lg:gap-8">
+      <!-- problem / approach / result -->
+      <div class="grid gap-12 border-t border-[color:var(--hairline)] py-14 lg:grid-cols-2" data-stagger>
+        <div class="space-y-10">
+          {
+            blocks.slice(0, 2).map((b) => (
+              <section>
+                <p class="label mb-4 text-brand">{b.n} — {b.k}</p>
+                <p class="max-w-[34rem] text-[0.9375rem] leading-[1.7] text-subtle">{b.v}</p>
+              </section>
+            ))
+          }
+        </div>
+        <div class="space-y-10">
+          <section>
+            <p class="label mb-4 text-brand">{blocks[2].n} — {blocks[2].k}</p>
+            <p class="max-w-[34rem] text-[0.9375rem] leading-[1.7] text-subtle">{blocks[2].v}</p>
+          </section>
+        </div>
+      </div>
+
+      <!-- impact -->
       {
-        blocks.map((block, i) => (
-          <div>
-            <span class="eyebrow">{String(i + 1).padStart(2, '0')}</span>
-            <h2 class="mt-3 text-xl font-semibold tracking-tight text-ink">{block.label}</h2>
-            <p class="mt-3 text-sm leading-relaxed text-subtle">{block.body}</p>
+        d.metrics.length > 0 && (
+          <div class="border-t border-[color:var(--hairline)] py-14">
+            <p class="label mb-8">Impact</p>
+            <dl class="flex flex-wrap gap-x-16 gap-y-8" data-stagger>
+              {d.metrics.map((m) => (
+                <div>
+                  <dd class="display text-[2.75rem] leading-none">{m.value}</dd>
+                  <dt class="label mt-3">{m.label}</dt>
+                </div>
+              ))}
+            </dl>
           </div>
-        ))
+        )
       }
-    </div>
 
-    {
-      project.data.highlights.length > 0 && (
-        <section class="mt-14">
-          <h2 class="eyebrow">{tr['projects.highlights']}</h2>
-          <ul class="mt-6 max-w-3xl space-y-2.5 text-sm text-subtle">
-            {project.data.highlights.map((item) => (
-              <li class="flex items-start gap-3">
-                <span class="mt-0.5 font-mono text-white/40">—</span>
-                <span>{item}</span>
+      <!-- gallery -->
+      {
+        d.gallery.length > 0 && (
+          <div class="border-t border-[color:var(--hairline)] py-14">
+            <p class="label mb-8">Gallery</p>
+            <div class="grid gap-4 sm:grid-cols-2" data-stagger>
+              {d.gallery.map((img) => (
+                <div class="border border-[color:var(--hairline)] bg-[color:var(--surface)] p-3">
+                  <Image
+                    src={img}
+                    alt={`${d.title} — ${isId ? 'tangkapan layar' : 'screenshot'}`}
+                    widths={[600, 900]}
+                    sizes="(min-width: 640px) 45vw, 90vw"
+                    class="h-auto w-full object-contain"
+                    loading="lazy"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      }
+
+      <!-- highlights + links -->
+      <div class="grid gap-12 border-t border-[color:var(--hairline)] py-14 lg:grid-cols-[1.4fr_1fr]">
+        <div>
+          <p class="label mb-6">Highlights</p>
+          <ul class="space-y-3" data-stagger>
+            {
+              d.highlights.map((h) => (
+                <li class="flex gap-4 text-[0.9375rem] leading-relaxed text-ink">
+                  <span class="text-brand">—</span>
+                  <span>{h}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+        <div>
+          <p class="label mb-6">Links</p>
+          <ul class="space-y-3">
+            {
+              d.links.length === 0 && (
+                <li class="label">{isId ? 'TAUTAN TIDAK TERSEDIA' : 'NO PUBLIC LINKS'}</li>
+              )
+            }
+            {d.links.map((l) => (
+              <li>
+                <a
+                  href={l.href}
+                  data-scramble="hover"
+                  class="label text-brand-ink transition-colors hover:text-brand"
+                  target={l.href.startsWith('http') ? '_blank' : undefined}
+                  rel={l.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                >
+                  {l.label} ↗
+                </a>
               </li>
             ))}
           </ul>
-        </section>
-      )
-    }
-
-    <section class="mt-14">
-      <h2 class="eyebrow">{tr['projects.stack']}</h2>
-      <div class="mt-6 flex flex-wrap gap-2">
-        {project.data.stack.map((tech) => (
-          <span class="tag">{tech}</span>
-        ))}
-      </div>
-    </section>
-
-    {
-      project.data.gallery.length > 0 && (
-        <section class="mt-14">
-          <h2 class="eyebrow">{tr['projects.gallery']}</h2>
-          <div class="mt-6 flex flex-col gap-5">
-            {project.data.gallery.map((shot) => (
-              <BlurImage
-                src={shot}
-                lqip="artiva-gallery"
-                alt={project.data.coverAlt}
-                widths={[720, 1280, 1920]}
-                sizes="(min-width: 1152px) 68rem, 100vw"
-                imgClass="rounded-2xl border border-white/10"
-              />
-            ))}
-          </div>
-        </section>
-      )
-    }
-
-    {
-      project.body && (
-        <div class="prose prose-invert reveal mt-14 max-w-3xl">
-          <Content />
         </div>
-      )
-    }
+      </div>
 
-    {
-      next && (
-        <a
-          href={localePath(locale, `/projects/${next.id}`)}
-          class="group mt-16 flex flex-col gap-2 border-t border-white/10 pt-8"
-        >
-          <span class="eyebrow">{tr['projects.next']}</span>
-          <span class="flex items-center gap-2 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-            {next.title}
-            <span
-              class="inline-block text-subtle transition-transform group-hover:translate-x-1"
-              aria-hidden="true"
-            >
-              ↗
+      <!-- next -->
+      {
+        next && (
+          <a
+            href={localePath(locale, `/projects/${next.id}`)}
+            data-cursor-label={isId ? 'BERIKUTNYA →' : 'NEXT CASE →'}
+            class="group flex items-end justify-between border-t border-[color:var(--hairline)] py-12 transition-colors hover:bg-[color:var(--hover)] sm:px-3"
+          >
+            <span>
+              <span class="label mb-3 block">{isId ? 'PROYEK BERIKUTNYA' : 'NEXT PROJECT'}</span>
+              <span class="display text-[2rem] sm:text-[3rem]">{next.title}</span>
             </span>
-          </span>
-        </a>
-      )
-    }
+            <span class="display text-[2rem] text-brand transition-transform group-hover:translate-x-1">→</span>
+          </a>
+        )
+      }
+    </div>
   </article>
 </Page>
