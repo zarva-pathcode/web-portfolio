@@ -9,6 +9,7 @@ import { initRail } from './rail';
 import { initExperience } from './experience';
 import { initWorkStage } from './workStage';
 import { initFaq } from './faq';
+import { initFooterAmbient } from './footerAmbient';
 
 let ctx: gsap.Context | null = null;
 let cleanups: Array<() => void> = [];
@@ -49,6 +50,7 @@ export function bootMotion(): void {
     cleanups.push(initExperience());
     cleanups.push(initWorkStage());
     cleanups.push(initFaq());
+    cleanups.push(initFooterAmbient());
   });
 
   requestAnimationFrame(() => {

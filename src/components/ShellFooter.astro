@@ -11,22 +11,16 @@ const isId = locale === 'id';
 const homeBase = localePath(locale, '/');
 
 const motto = isId ? 'Ubah kekacauan jadi ketertiban' : 'Turn chaos into order';
-const bars = [42, 62, 78, 54, 88, 70, 46, 82, 58];
 ---
 
 <footer id="contact" class="relative overflow-hidden border-t border-[color:var(--hairline)] bg-canvas text-ink">
-  <!-- spectrum: zamkara-style blurred bars rising from the floor -->
-  <div aria-hidden="true" class="pointer-events-none absolute inset-x-0 bottom-0 h-[46vh] overflow-hidden">
-    <div class="absolute inset-0 grid grid-cols-9 items-end">
-      {
-        bars.map((h, i) => (
-          <span
-            class="spectrum-bar origin-bottom"
-            style={`height:${h}%;animation-delay:${(i * 0.45).toFixed(2)}s`}
-          />
-        ))
-      }
-    </div>
+  <!-- Halftone dot fire: crisp dots sized by heat, echoing the hero halftone -->
+  <div
+    data-footer-ambient
+    aria-hidden="true"
+    class="pointer-events-none absolute inset-x-0 bottom-0 h-[36vh] min-h-[220px] max-h-[340px]"
+  >
+    <canvas data-footer-fire class="footer-fire-canvas block h-full w-full" />
   </div>
 
   <div class="relative z-10">
@@ -156,42 +150,14 @@ const bars = [42, 62, 78, 54, 88, 70, 46, 82, 58];
 
   <!-- oversized wordmark, cropped by the floor -->
   <div aria-hidden="true" class="relative z-10 select-none overflow-hidden">
-    <p class="display mx-auto max-w-[1440px] translate-y-[18%] px-5 text-[19vw] leading-[0.75] tracking-[-0.04em] text-ink/10 sm:px-10 lg:px-16">
+    <p class="display mx-auto max-w-[1440px] translate-y-[18%] px-5 text-[19vw] leading-[0.75] tracking-[-0.04em] text-[color:color-mix(in_oklab,var(--ink)_9%,var(--canvas))] sm:px-10 lg:px-16">
       {site.brand}
     </p>
   </div>
 </footer>
 
 <style>
-  .spectrum-bar {
+  .footer-fire-canvas {
     display: block;
-    width: 100%;
-    background: linear-gradient(
-      to top,
-      var(--brand) 0%,
-      color-mix(in oklab, var(--brand) 55%, transparent) 45%,
-      transparent 100%
-    );
-    filter: blur(38px);
-    opacity: 0.55;
-    transform-origin: bottom;
-    animation: spectrum 6.5s ease-in-out infinite alternate;
-  }
-
-  @keyframes spectrum {
-    from {
-      transform: scaleY(0.72);
-      opacity: 0.35;
-    }
-    to {
-      transform: scaleY(1.06);
-      opacity: 0.6;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .spectrum-bar {
-      animation: none;
-    }
   }
 </style>
