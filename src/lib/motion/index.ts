@@ -41,7 +41,7 @@ export function bootMotion(): void {
   cleanups.push(stopEngine);
 
   ctx = gsap.context(() => {
-    initReveals();
+    cleanups.push(initReveals());
     initOdometers();
     cleanups.push(initScramble());
     cleanups.push(initTactile());

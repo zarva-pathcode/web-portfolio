@@ -37,7 +37,7 @@ const homeBase = localePath(locale, '/');
       </div>
     </div>
 
-    <!-- 3 Interactive Editorial Bento Cards with bespoke vector micro-diagrams -->
+    <!-- 3 Interactive Editorial Bento Cards with live looping vector micro-diagrams -->
     <ul class="mt-16 grid grid-cols-1 gap-5 md:grid-cols-3" data-stagger>
       {
         disciplines.map((d, idx) => (
@@ -57,53 +57,55 @@ const homeBase = localePath(locale, '/');
                   </span>
                 </div>
 
-                <!-- Bespoke lightweight vector micro-diagram per discipline -->
+                <!-- Live looping vector micro-diagram (paused offscreen & under reduced-motion) -->
                 <div
+                  data-bento-diagram
                   class="bento-diagram mb-7 flex h-28 items-center justify-center overflow-hidden border border-[color:var(--hairline)] bg-canvas/70 px-4"
                   aria-hidden="true"
                 >
                   {idx === 0 && (
                     <svg viewBox="0 0 220 92" class="bento-svg h-20 w-full text-ink" fill="none">
-                      <!-- Mobile frame + layered BLoC state flow -->
+                      <!-- 01 Mobile: Flutter phone + live BLoC event/state bus -->
                       <rect x="24" y="10" width="44" height="72" rx="6" stroke="currentColor" stroke-opacity="0.35" stroke-width="1.2" />
                       <line x1="40" y1="16" x2="52" y2="16" stroke="currentColor" stroke-opacity="0.35" stroke-width="1.2" stroke-linecap="round" />
-                      <rect class="bento-part-a" x="31" y="25" width="30" height="16" rx="2" fill="var(--brand)" fill-opacity="0.22" stroke="var(--brand)" stroke-width="1.1" />
-                      <rect class="bento-part-b" x="31" y="46" width="30" height="8" rx="1.5" fill="currentColor" fill-opacity="0.14" />
-                      <rect x="31" y="58" width="20" height="8" rx="1.5" fill="currentColor" fill-opacity="0.09" />
-                      <path d="M74 33 H114 M74 52 H114" stroke="currentColor" stroke-opacity="0.25" stroke-dasharray="3 3" />
-                      <circle class="bento-dot" cx="94" cy="33" r="3" fill="var(--brand)" />
-                      <rect class="bento-part-b" x="118" y="20" width="76" height="22" rx="2" stroke="currentColor" stroke-opacity="0.3" stroke-width="1.1" />
-                      <rect x="126" y="28" width="32" height="5" rx="1" fill="var(--brand)" fill-opacity="0.7" />
-                      <rect class="bento-part-a" x="118" y="48" width="76" height="22" rx="2" stroke="currentColor" stroke-opacity="0.22" stroke-width="1.1" />
-                      <rect x="126" y="56" width="46" height="5" rx="1" fill="currentColor" fill-opacity="0.25" />
+                      <rect class="bento-flow-a" x="31" y="25" width="30" height="16" rx="2" fill="var(--brand)" fill-opacity="0.22" stroke="var(--brand)" stroke-width="1.1" />
+                      <rect class="bento-flow-b" x="31" y="46" width="30" height="8" rx="1.5" fill="currentColor" fill-opacity="0.18" />
+                      <rect x="31" y="58" width="20" height="8" rx="1.5" fill="currentColor" fill-opacity="0.1" />
+                      <path class="bento-bus-line" d="M74 33 H114 M74 55 H114" stroke="currentColor" stroke-opacity="0.28" stroke-dasharray="3 3" />
+                      <circle class="bento-pulse-dot" cx="76" cy="33" r="3" fill="var(--brand)" />
+                      <circle class="bento-pulse-dot-rev" cx="112" cy="55" r="2.4" fill="var(--signal)" />
+                      <rect class="bento-flow-a" x="118" y="20" width="76" height="22" rx="2" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" />
+                      <rect x="126" y="28" width="34" height="5" rx="1" fill="var(--brand)" fill-opacity="0.72" />
+                      <rect class="bento-flow-b" x="118" y="48" width="76" height="22" rx="2" stroke="currentColor" stroke-opacity="0.24" stroke-width="1.1" />
+                      <rect x="126" y="56" width="46" height="5" rx="1" fill="currentColor" fill-opacity="0.26" />
                     </svg>
                   )}
                   {idx === 1 && (
                     <svg viewBox="0 0 220 92" class="bento-svg h-20 w-full text-ink" fill="none">
-                      <!-- Design system modular grid & tokens -->
+                      <!-- 02 Systems: Live modular grid & pulsing design token -->
                       <line x1="20" y1="20" x2="200" y2="20" stroke="currentColor" stroke-opacity="0.12" />
                       <line x1="20" y1="46" x2="200" y2="46" stroke="currentColor" stroke-opacity="0.12" />
                       <line x1="20" y1="72" x2="200" y2="72" stroke="currentColor" stroke-opacity="0.12" />
-                      <rect class="bento-part-a" x="28" y="16" width="52" height="60" rx="2" stroke="var(--brand)" stroke-width="1.2" fill="var(--brand)" fill-opacity="0.12" />
-                      <rect class="bento-part-b" x="90" y="16" width="44" height="26" rx="2" stroke="currentColor" stroke-opacity="0.35" stroke-width="1.1" />
-                      <rect class="bento-part-b" x="90" y="50" width="44" height="26" rx="2" stroke="currentColor" stroke-opacity="0.22" stroke-width="1.1" />
-                      <circle class="bento-dot" cx="164" cy="29" r="11" stroke="var(--brand)" stroke-width="1.2" />
-                      <circle cx="164" cy="29" r="4" fill="var(--brand)" />
-                      <rect class="bento-part-a" x="146" y="50" width="46" height="26" rx="2" fill="currentColor" fill-opacity="0.1" stroke="currentColor" stroke-opacity="0.3" stroke-width="1.1" />
+                      <rect class="bento-grid-a" x="28" y="16" width="52" height="60" rx="2" stroke="var(--brand)" stroke-width="1.2" fill="var(--brand)" fill-opacity="0.13" />
+                      <rect class="bento-grid-b" x="90" y="16" width="44" height="26" rx="2" stroke="currentColor" stroke-opacity="0.35" stroke-width="1.1" />
+                      <rect class="bento-grid-a" x="90" y="50" width="44" height="26" rx="2" stroke="currentColor" stroke-opacity="0.24" stroke-width="1.1" />
+                      <circle class="bento-ring" cx="164" cy="29" r="11" stroke="var(--brand)" stroke-width="1.2" stroke-dasharray="18 6" />
+                      <circle class="bento-token-core" cx="164" cy="29" r="4" fill="var(--brand)" />
+                      <rect class="bento-grid-b" x="146" y="50" width="46" height="26" rx="2" fill="currentColor" fill-opacity="0.1" stroke="currentColor" stroke-opacity="0.3" stroke-width="1.1" />
                     </svg>
                   )}
                   {idx === 2 && (
                     <svg viewBox="0 0 220 92" class="bento-svg h-20 w-full text-ink" fill="none">
-                      <!-- Responsive web viewport & component layers -->
+                      <!-- 03 Engineering: Browser live component render & code module -->
                       <rect x="26" y="14" width="116" height="64" rx="3" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.2" />
                       <line x1="26" y1="26" x2="142" y2="26" stroke="currentColor" stroke-opacity="0.2" />
                       <circle cx="34" cy="20" r="1.8" fill="var(--brand)" />
                       <circle cx="41" cy="20" r="1.8" fill="currentColor" fill-opacity="0.3" />
-                      <rect class="bento-part-a" x="36" y="34" width="44" height="34" rx="1.5" fill="var(--brand)" fill-opacity="0.18" stroke="var(--brand)" stroke-width="1" />
-                      <rect class="bento-part-b" x="86" y="34" width="46" height="14" rx="1.5" fill="currentColor" fill-opacity="0.14" />
-                      <rect class="bento-part-b" x="86" y="54" width="32" height="14" rx="1.5" fill="currentColor" fill-opacity="0.09" />
-                      <rect class="bento-part-a" x="156" y="24" width="38" height="44" rx="2" stroke="var(--brand)" stroke-width="1.1" fill="var(--canvas)" />
-                      <path d="M167 42 L162 46 L167 50 M183 42 L188 46 L183 50 M177 40 L173 52" stroke="var(--brand)" stroke-width="1.2" stroke-linecap="round" />
+                      <rect class="bento-render-a" x="36" y="34" width="44" height="34" rx="1.5" fill="var(--brand)" fill-opacity="0.18" stroke="var(--brand)" stroke-width="1" />
+                      <rect class="bento-render-b" x="86" y="34" width="46" height="14" rx="1.5" fill="currentColor" fill-opacity="0.18" />
+                      <rect class="bento-render-c" x="86" y="54" width="32" height="14" rx="1.5" fill="currentColor" fill-opacity="0.12" />
+                      <rect class="bento-code-box" x="156" y="24" width="38" height="44" rx="2" stroke="var(--brand)" stroke-width="1.1" fill="var(--canvas)" />
+                      <path class="bento-code-glyph" d="M167 42 L162 46 L167 50 M183 42 L188 46 L183 50 M177 40 L173 52" stroke="var(--brand)" stroke-width="1.2" stroke-linecap="round" />
                     </svg>
                   )}
                 </div>

@@ -31,10 +31,11 @@ function prepareSplitWords(el: HTMLElement): void {
   });
 }
 
-export function initReveals(): void {
+export function initReveals(): () => void {
   const reduced = isReducedMotion();
+  const cleanups: Array<() => void> = [];
 
-  // 1. Word-split headings
+  // 1. Word-split headings (Hero = instant once; below-fold = Heynesh reverse onLeaveBack)
   document.querySelectorAll<HTMLElement>('[data-split]').forEach((el) => {
     prepareSplitWords(el);
     if (reduced) {
@@ -50,13 +51,13 @@ export function initReveals(): void {
       ScrollTrigger.create({
         trigger: el,
         start: 'top 90%',
-        once: true,
         onEnter: () => el.classList.add('is-in'),
+        onLeaveBack: () => el.classList.remove('is-in'),
       });
     }
   });
 
-  // 2. Hero instant choreography (< 1.1s, no blocking curtain)
+  // 2. Hero instant choreography (< 1.1s, no blocking curtain, never reverses at top)
   const hero = document.getElementById('hero');
   if (hero) {
     const heroParts = hero.querySelectorAll<HTMLElement>(
@@ -88,43 +89,40 @@ export function initReveals(): void {
     }
   }
 
-  // 3. Section reveals ([data-reveal]) & staggered groups ([data-stagger])
+  // 3. Below-fold section reveals ([data-reveal]) & staggered groups ([data-stagger])
+  //    Play when entering from bottom; reverse cleanly when scrolling back up past threshold.
   const targets = document.querySelectorAll<HTMLElement>('[data-reveal], [data-stagger]');
   targets.forEach((el) => {
     if (el.closest('#hero') && el.getAttribute('data-reveal') === 'screen') return;
 
-    const revealNow = () => {
-      if (el.hasAttribute('data-stagger')) {
-        Array.from(el.children).forEach((child, i) => {
-          (child as HTMLElement).style.setProperty(
-            '--reveal-delay',
-            `${Math.min(i * 65, 390)}ms`
-          );
-        });
-      }
-      el.classList.add('is-in');
-    };
-
-    if (reduced) {
-      revealNow();
-      return;
+    if (el.hasAttribute('data-stagger')) {
+      Array.from(el.children).forEach((child, i) => {
+        (child as HTMLElement).style.setProperty(
+          '--reveal-delay',
+          `${Math.min(i * 65, 390)}ms`
+        );
+      });
     }
 
-    const rect = el.getBoundingClientRect();
-    if (rect.top < window.innerHeight * 0.92) {
-      requestAnimationFrame(() => requestAnimationFrame(revealNow));
+    if (reduced) {
+      el.classList.add('is-in');
       return;
     }
 
     ScrollTrigger.create({
       trigger: el,
       start: 'top 90%',
-      once: true,
-      onEnter: revealNow,
+      onEnter: () => el.classList.add('is-in'),
+      onLeaveBack: () => el.classList.remove('is-in'),
     });
+
+    // Ensure elements already above the trigger line on initial load (e.g. deep anchor URL) reveal immediately
+    if (el.getBoundingClientRect().top < window.innerHeight * 0.9) {
+      requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('is-in')));
+    }
   });
 
-  // 4. How I Work horizontal step connector sweep
+  // 4. How I Work horizontal step connector sweep (reverses cleanly when scrolling above #how)
   const connector = document.querySelector<HTMLElement>('[data-step-connector]');
   if (connector) {
     if (reduced) {
@@ -135,15 +133,34 @@ export function initReveals(): void {
         { scaleX: 0, transformOrigin: '0% 50%' },
         {
           scaleX: 1,
-          duration: 1.05,
+          duration: 0.95,
           ease: 'expo.out',
           scrollTrigger: {
             trigger: connector,
-            start: 'top 86%',
-            once: true,
+            start: 'top 88%',
+            toggleActions: 'play none none reverse',
           },
         }
       );
     }
   }
+
+  // 5. Live Bento SVG loops: only animate while visible in viewport (battery-friendly)
+  const bentoDiagrams = Array.from(document.querySelectorAll<HTMLElement>('[data-bento-diagram]'));
+  if (bentoDiagrams.length && !reduced && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          entry.target.setAttribute('data-in-view', entry.isIntersecting ? 'true' : 'false');
+        });
+      },
+      { threshold: 0.15 }
+    );
+    bentoDiagrams.forEach((el) => io.observe(el));
+    cleanups.push(() => io.disconnect());
+  }
+
+  return () => {
+    cleanups.forEach((fn) => fn());
+  };
 }

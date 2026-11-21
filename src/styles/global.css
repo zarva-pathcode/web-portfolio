@@ -543,30 +543,60 @@ html.lenis body {
     transform: rotate(45deg);
   }
 
-  /* Experience timeline centered dot, scrubbed spine fill & expandable impact */
-  .exp-spine-fill {
-    transform-origin: 50% 0%;
-    will-change: transform;
+  /* Experience intact career spine: upward growth pulse, active beacon & sliding spotlight */
+  .exp-spine-pulse {
+    position: absolute;
+    left: 0;
+    bottom: -24%;
+    width: 100%;
+    height: 22%;
+    background: linear-gradient(
+      to top,
+      transparent 0%,
+      var(--brand) 55%,
+      transparent 100%
+    );
+    opacity: 0;
   }
 
-  .exp-dot {
-    background-color: var(--hairline);
+  [data-exp-list][data-in-view='true'] .exp-spine-pulse {
+    animation: exp-upward-pulse 5.2s var(--ease-enter) infinite;
+  }
+
+  .exp-dot--achieved {
+    background-color: var(--subtle);
     transition:
-      background-color 360ms var(--ease-enter),
-      transform 360ms var(--ease-enter),
-      box-shadow 360ms var(--ease-enter);
+      background-color 280ms var(--ease-hover),
+      transform 280ms var(--ease-enter);
   }
 
-  .exp-dot.is-lit {
+  .exp-dot--current {
     background-color: var(--brand);
-    transform: scale(1.2);
     box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 22%, transparent);
+  }
+
+  [data-exp-list][data-in-view='true'] .exp-dot--current::after {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    border-radius: 9999px;
+    border: 1.5px solid var(--brand);
+    animation: exp-beacon 2.4s cubic-bezier(0.2, 0.8, 0.3, 1) infinite;
+  }
+
+  .exp-item[data-expanded] .exp-card {
+    border-color: color-mix(in srgb, var(--brand) 65%, transparent);
+    background-color: color-mix(in srgb, var(--surface) 88%, transparent);
   }
 
   .exp-expand-panel {
     display: grid;
     grid-template-rows: 0fr;
     transition: grid-template-rows 360ms var(--ease-press);
+  }
+
+  .exp-instant-reset .exp-expand-panel {
+    transition: none !important;
   }
 
   .exp-expand-panel[data-open] {
@@ -578,24 +608,67 @@ html.lenis body {
     min-height: 0;
   }
 
-  /* About Bento Cards: micro-diagram hover motion */
-  .bento-svg .bento-part-a,
-  .bento-svg .bento-part-b,
-  .bento-svg .bento-dot {
-    transition: transform 420ms var(--ease-enter);
+  /* About Bento Cards: live looping SVG micro-diagrams (only active while in viewport) */
+  .bento-svg * {
     transform-box: fill-box;
     transform-origin: center;
   }
 
+  [data-bento-diagram][data-in-view='true'] .bento-pulse-dot {
+    animation: bento-bus-forward 3.2s var(--ease-press) infinite;
+  }
+
+  [data-bento-diagram][data-in-view='true'] .bento-pulse-dot-rev {
+    animation: bento-bus-back 3.2s var(--ease-press) 1.4s infinite;
+  }
+
+  [data-bento-diagram][data-in-view='true'] .bento-flow-a {
+    animation: bento-soft-glow 3.2s ease-in-out infinite;
+  }
+
+  [data-bento-diagram][data-in-view='true'] .bento-flow-b {
+    animation: bento-soft-glow 3.2s ease-in-out 1.6s infinite;
+  }
+
+  [data-bento-diagram][data-in-view='true'] .bento-grid-a {
+    animation: bento-grid-shift-a 4.2s var(--ease-press) infinite;
+  }
+
+  [data-bento-diagram][data-in-view='true'] .bento-grid-b {
+    animation: bento-grid-shift-b 4.2s var(--ease-press) infinite;
+  }
+
+  [data-bento-diagram][data-in-view='true'] .bento-ring {
+    animation: bento-ring-spin 10s linear infinite;
+  }
+
+  [data-bento-diagram][data-in-view='true'] .bento-token-core {
+    animation: bento-core-pulse 2.8s ease-in-out infinite;
+  }
+
+  [data-bento-diagram][data-in-view='true'] .bento-render-a {
+    animation: bento-render-step 3.8s ease-in-out infinite;
+  }
+
+  [data-bento-diagram][data-in-view='true'] .bento-render-b {
+    animation: bento-render-step 3.8s ease-in-out 1.1s infinite;
+  }
+
+  [data-bento-diagram][data-in-view='true'] .bento-render-c {
+    animation: bento-render-step 3.8s ease-in-out 2.2s infinite;
+  }
+
+  [data-bento-diagram][data-in-view='true'] .bento-code-glyph {
+    animation: bento-code-breathe 2.6s ease-in-out infinite;
+  }
+
   @media (hover: hover) {
-    .bento-card:hover .bento-part-a {
-      transform: translate(3px, -2px);
+    .bento-card:hover [data-bento-diagram][data-in-view='true'] .bento-pulse-dot,
+    .bento-card:hover [data-bento-diagram][data-in-view='true'] .bento-pulse-dot-rev {
+      animation-duration: 1.8s;
     }
-    .bento-card:hover .bento-part-b {
-      transform: translate(-3px, 2px);
-    }
-    .bento-card:hover .bento-dot {
-      transform: scale(1.25);
+    .bento-card:hover [data-bento-diagram][data-in-view='true'] .bento-ring {
+      animation-duration: 4.5s;
     }
   }
 
@@ -695,6 +768,151 @@ html.lenis body {
   }
   to {
     transform: translateX(-50%);
+  }
+}
+
+/* Live looping Bento micro-diagrams */
+@keyframes bento-bus-forward {
+  0%,
+  12% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  24% {
+    opacity: 1;
+  }
+  72% {
+    transform: translateX(36px);
+    opacity: 1;
+  }
+  86%,
+  100% {
+    transform: translateX(36px);
+    opacity: 0;
+  }
+}
+
+@keyframes bento-bus-back {
+  0%,
+  12% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  24% {
+    opacity: 1;
+  }
+  72% {
+    transform: translateX(-36px);
+    opacity: 1;
+  }
+  86%,
+  100% {
+    transform: translateX(-36px);
+    opacity: 0;
+  }
+}
+
+@keyframes bento-soft-glow {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-1.5px);
+  }
+}
+
+@keyframes bento-grid-shift-a {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(3px, -2px);
+  }
+}
+
+@keyframes bento-grid-shift-b {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-3px, 2px);
+  }
+}
+
+@keyframes bento-ring-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes bento-core-pulse {
+  0%,
+  100% {
+    transform: scale(0.92);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.22);
+    opacity: 1;
+  }
+}
+
+@keyframes bento-render-step {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.97);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes bento-code-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Experience career spine ambient upward pulse & current-role beacon */
+@keyframes exp-upward-pulse {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.85;
+  }
+  82% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(-560%);
+    opacity: 0;
+  }
+}
+
+@keyframes exp-beacon {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
   }
 }
 
@@ -823,8 +1041,11 @@ html.is-swapping main {
 
 /* Reduced motion: zero hidden elements, zero animations, unstacked Selected Work. */
 @media (prefers-reduced-motion: reduce) {
-  .marquee-track {
-    animation: none;
+  .marquee-track,
+  .bento-svg *,
+  .exp-spine-pulse,
+  .exp-dot--current::after {
+    animation: none !important;
   }
 
   .js [data-reveal],

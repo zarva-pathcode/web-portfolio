@@ -27,63 +27,76 @@ const labels = {
         </h2>
       </div>
       <p class="label">
-        {isId ? `${entries.length} peran · klik detail untuk sorotan` : `${entries.length} roles · expand for highlights`}
+        {isId ? `${entries.length} peran · klik kartu untuk sorotan` : `${entries.length} roles · click any role to inspect`}
       </p>
     </div>
 
-    <!-- Pixel-aligned timeline: dedicated spine column so dots sit at exact 0px offset -->
-    <div class="relative" data-exp-list>
-      <!-- Continuous vertical spine track & scrubbed clay fill -->
+    <!-- Intact career spine: highlight stays permanently anchored on the latest active role -->
+    <div class="exp-timeline relative" data-exp-list>
       <div
         data-exp-spine
         aria-hidden="true"
-        class="pointer-events-none absolute top-3 bottom-3 left-[0.75rem] w-px -translate-x-1/2 bg-[color:var(--hairline)] sm:left-[8.75rem]"
+        class="pointer-events-none absolute top-4 bottom-4 left-[0.75rem] w-px -translate-x-1/2 overflow-hidden bg-[color:var(--hairline)] sm:left-[8.75rem]"
       >
-        <div
-          data-exp-spine-fill
-          class="exp-spine-fill h-full w-[2px] -translate-x-[0.5px] bg-brand"
-        ></div>
+        <div class="exp-spine-solid h-full w-full bg-[color:var(--brand)]/30"></div>
+        <div class="exp-spine-pulse" data-exp-pulse></div>
       </div>
 
-      <ol class="space-y-8 sm:space-y-10">
+      <ol class="space-y-6 sm:space-y-8">
         {
           entries.map((entry, i) => {
             const d = entry.data;
             const yearLabel = d.period.split('—')[0].trim().split(' ').slice(-1)[0];
+            const isCurrent = i === 0;
             const panelId = `exp-impact-${i}`;
             return (
               <li
-                data-exp-item
-                class="grid grid-cols-[1.5rem_1fr] items-start sm:grid-cols-[7.5rem_2.5rem_1fr]"
+                data-exp-item={i}
+                class:list={[
+                  'exp-item grid grid-cols-[1.5rem_1fr] items-start sm:grid-cols-[7.5rem_2.5rem_1fr]',
+                  isCurrent && 'is-current',
+                ]}
               >
-                <!-- Desktop Col 1: Year right-aligned cleanly left of the spine -->
-                <div class="hidden pr-4 pt-5 text-right sm:block">
+                <!-- Desktop Col 1: Year right-aligned left of spine -->
+                <div class="hidden pr-4 pt-6 text-right sm:block">
                   <span
+                    data-exp-year
                     class:list={[
-                      'numeral text-[1.35rem] leading-none',
-                      i === 0 ? 'text-brand' : 'text-subtle',
+                      'exp-year numeral text-[1.35rem] leading-none',
+                      isCurrent ? 'text-brand' : 'text-subtle',
                     ]}
                   >
                     {yearLabel}
                   </span>
                 </div>
 
-                <!-- Col 2 (Col 1 mobile): Centered dot directly on the vertical spine -->
-                <div class="relative z-10 flex justify-center pt-6">
+                <!-- Col 2: Centered milestone dot directly on vertical spine -->
+                <div class="relative z-10 flex justify-center pt-[1.85rem]">
                   <span
                     data-exp-dot
                     class:list={[
-                      'exp-dot block size-3 rounded-full border-2 border-canvas',
-                      i === 0 && 'is-lit',
+                      'exp-dot relative block size-3 rounded-full border-2 border-canvas',
+                      isCurrent ? 'exp-dot--current' : 'exp-dot--achieved',
                     ]}
                     aria-hidden="true"
                   />
                 </div>
 
-                <!-- Col 3: Clean experience card with expandable impact points -->
-                <div class="ml-3 border border-[color:var(--hairline)] bg-[color:var(--surface)]/45 p-5 transition-colors duration-300 hover:border-[color:var(--brand)]/50 hover:bg-[color:var(--surface)]/80 sm:ml-4 sm:p-7">
+                <!-- Col 3: Click-anywhere interactive card (transition-colors only so GSAP owns transform/opacity cleanly) -->
+                <div
+                  data-exp-card
+                  class="exp-card ml-3 cursor-pointer border border-[color:var(--hairline)] bg-[color:var(--surface)]/45 p-5 transition-colors duration-200 hover:border-[color:var(--brand)]/55 hover:bg-[color:var(--surface)]/80 sm:ml-4 sm:p-7"
+                >
                   <div class="flex flex-wrap items-baseline justify-between gap-2">
-                    <h3 class="display text-[1.5rem] leading-tight sm:text-[1.9rem]">{d.company}</h3>
+                    <div class="flex flex-wrap items-center gap-3">
+                      <h3 class="display text-[1.5rem] leading-tight sm:text-[1.9rem]">{d.company}</h3>
+                      {isCurrent && (
+                        <span class="label inline-flex items-center gap-1.5 rounded-[2px] border border-[color:var(--signal)]/40 bg-[color:var(--signal)]/10 px-2 py-1 text-[0.5rem] text-signal">
+                          <span class="exp-live-dot size-1.5 rounded-full bg-signal" aria-hidden="true"></span>
+                          {isId ? 'AKTIF' : 'CURRENT'}
+                        </span>
+                      )}
+                    </div>
                     <span class="numeral text-sm text-brand sm:hidden">{yearLabel}</span>
                   </div>
 
@@ -122,7 +135,7 @@ const labels = {
                       <div class="exp-expand-panel__inner">
                         <ul class="mt-4 space-y-2.5 border-t border-[color:var(--hairline)] pt-4">
                           {d.points.map((pt) => (
-                            <li class="flex gap-3 text-[0.8125rem] leading-relaxed text-subtle">
+                            <li data-exp-point class="flex gap-3 text-[0.8125rem] leading-relaxed text-subtle">
                               <span class="text-brand" aria-hidden="true">—</span>
                               <span>{pt}</span>
                             </li>
