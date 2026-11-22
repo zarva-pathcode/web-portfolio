@@ -6,15 +6,21 @@ import { triggerHeroOdometers } from './odometer';
 
 const SEEN_KEY = 'zarvaism:hero-seen';
 
-function hasSeenHero(): boolean {
-  try {
-    return window.sessionStorage.getItem(SEEN_KEY) === '1';
-  } catch {
-    return false;
+declare global {
+  interface Window {
+    __zarvaInAppHeroVisited?: boolean;
   }
 }
 
+function hasSeenHeroInTab(): boolean {
+  return Boolean(typeof window !== 'undefined' && window.__zarvaInAppHeroVisited);
+}
+
 function markSeenHero(): void {
+  if (typeof window !== 'undefined') {
+    window.__zarvaInAppHeroVisited = true;
+    document.documentElement.classList.add('hero-opening-skip');
+  }
   try {
     window.sessionStorage.setItem(SEEN_KEY, '1');
   } catch {
@@ -40,6 +46,15 @@ export function initHeroLens(): () => void {
   const heroCopy = hero.querySelector<HTMLElement>('[data-hero-copy]');
   const headline = hero.querySelector<HTMLElement>('h1[data-split][data-hero-managed]');
   const lensHint = hero.querySelector<HTMLElement>('[data-hero-lens-hint]');
+  const opening = hero.querySelector<HTMLElement>('[data-hero-opening]');
+  const openingWordmark = opening?.querySelector<HTMLElement>('[data-opening-wordmark]') ?? null;
+  const openingChars = opening
+    ? Array.from(opening.querySelectorAll<HTMLElement>('[data-opening-char]'))
+    : [];
+  const openingLine = opening?.querySelector<HTMLElement>('[data-opening-line]') ?? null;
+  const openingMeta = opening?.querySelector<HTMLElement>('[data-opening-meta]') ?? null;
+  const watermark = hero.querySelector<HTMLElement>('[data-hero-watermark]');
+  const watermarkText = hero.querySelector<HTMLElement>('[data-hero-watermark-text]');
   const managedParts = Array.from(
     hero.querySelectorAll<HTMLElement>(
       '[data-hero-eyebrow][data-hero-managed], [data-hero-sub][data-hero-managed], [data-hero-cta][data-hero-managed], [data-hero-stats][data-hero-managed]'
@@ -207,9 +222,9 @@ export function initHeroLens(): () => void {
         }
       }
 
-      ctx.fillStyle = night ? 'rgba(242, 237, 227, 0.085)' : 'rgba(20, 17, 15, 0.08)';
+      ctx.fillStyle = night ? 'rgba(228, 231, 236, 0.085)' : 'rgba(22, 24, 29, 0.08)';
       ctx.fill(restPath);
-      ctx.fillStyle = night ? 'rgba(210, 114, 75, 0.52)' : 'rgba(180, 85, 47, 0.44)';
+      ctx.fillStyle = night ? 'rgba(127, 162, 190, 0.52)' : 'rgba(61, 90, 115, 0.44)';
       ctx.fill(hotPath);
     }
 
@@ -280,37 +295,37 @@ export function initHeroLens(): () => void {
     }
 
     if (night) {
-      portraitCtx.fillStyle = 'rgba(182, 86, 50, 0.48)';
+      // Soft misty steel & cool silver halftone tones on graphite ground
+      portraitCtx.fillStyle = 'rgba(92, 128, 158, 0.46)';
       portraitCtx.fill(softPath);
-      portraitCtx.fillStyle = 'rgba(216, 120, 76, 0.82)';
+      portraitCtx.fillStyle = 'rgba(138, 174, 202, 0.80)';
       portraitCtx.fill(midPath);
-      portraitCtx.fillStyle = 'rgba(240, 218, 192, 0.90)';
+      portraitCtx.fillStyle = 'rgba(226, 233, 240, 0.90)';
       portraitCtx.fill(deepPath);
     } else {
-      // Refined warm clay-espresso print tones (softer & warmer than harsh black holes)
-      portraitCtx.fillStyle = 'rgba(180, 85, 47, 0.34)';
+      // Refined mineral slate-blue & graphite ink print tones
+      portraitCtx.fillStyle = 'rgba(61, 90, 115, 0.30)';
       portraitCtx.fill(softPath);
-      portraitCtx.fillStyle = 'rgba(176, 80, 42, 0.76)';
+      portraitCtx.fillStyle = 'rgba(54, 79, 102, 0.72)';
       portraitCtx.fill(midPath);
-      portraitCtx.fillStyle = 'rgba(78, 38, 24, 0.90)';
+      portraitCtx.fillStyle = 'rgba(26, 34, 44, 0.90)';
       portraitCtx.fill(deepPath);
     }
 
-    // Moment 2: Gallery Studio Light Wash (`source-atop` illuminates ONLY the crisp halftone dots —
-    // ultra-soft feathered sheen, zero hard circle boundary, zero dot squirming!)
+    // Moment 2: Gallery Studio Light Wash (`source-atop` illuminates ONLY the crisp halftone dots)
     if (activeLight > 0.015) {
       const lightR = isDesktop ? 245 : 155;
       portraitCtx.save();
       portraitCtx.globalCompositeOperation = 'source-atop';
       const grad = portraitCtx.createRadialGradient(curX, curY, 0, curX, curY, lightR);
       if (night) {
-        grad.addColorStop(0, `rgba(255, 224, 174, ${(0.52 * activeLight).toFixed(3)})`);
-        grad.addColorStop(0.45, `rgba(232, 140, 82, ${(0.28 * activeLight).toFixed(3)})`);
-        grad.addColorStop(1, 'rgba(232, 140, 82, 0)');
+        grad.addColorStop(0, `rgba(214, 232, 248, ${(0.52 * activeLight).toFixed(3)})`);
+        grad.addColorStop(0.45, `rgba(142, 182, 214, ${(0.28 * activeLight).toFixed(3)})`);
+        grad.addColorStop(1, 'rgba(142, 182, 214, 0)');
       } else {
-        grad.addColorStop(0, `rgba(218, 108, 52, ${(0.56 * activeLight).toFixed(3)})`);
-        grad.addColorStop(0.48, `rgba(196, 94, 48, ${(0.24 * activeLight).toFixed(3)})`);
-        grad.addColorStop(1, 'rgba(196, 94, 48, 0)');
+        grad.addColorStop(0, `rgba(110, 154, 190, ${(0.56 * activeLight).toFixed(3)})`);
+        grad.addColorStop(0.48, `rgba(74, 112, 144, ${(0.24 * activeLight).toFixed(3)})`);
+        grad.addColorStop(1, 'rgba(74, 112, 144, 0)');
       }
       portraitCtx.fillStyle = grad;
       portraitCtx.fillRect(0, 0, width, height);
@@ -399,7 +414,17 @@ export function initHeroLens(): () => void {
     }
   };
 
-  // Moment 1: Unified Hero intro timeline + early-scroll skip + session revisit
+  // Moment 1: Unified Hero intro timeline + HeyNesh-inspired full-stage Wordmark Opening + early-scroll skip
+  const hideOpeningImmediate = () => {
+    if (opening) {
+      gsap.killTweensOf([opening, openingWordmark, ...openingChars, openingLine, openingMeta].filter(Boolean));
+      opening.style.display = 'none';
+      gsap.set(opening, { clearProps: 'opacity,clipPath,transform' });
+    }
+    if (watermark) gsap.set(watermark, { clearProps: 'opacity,transform' });
+    if (watermarkText) gsap.set(watermarkText, { clearProps: 'opacity,transform' });
+  };
+
   const skipIntroIfRunning = () => {
     if (!introActive) return;
     if (window.scrollY <= 24) return;
@@ -410,6 +435,7 @@ export function initHeroLens(): () => void {
       introTl.kill();
       introTl = null;
     }
+    hideOpeningImmediate();
     headline?.classList.add('is-in');
     gsap.set(managedParts, { opacity: 1, y: 0, clearProps: 'transform' });
     triggerHeroOdometers({ instant: true });
@@ -421,6 +447,7 @@ export function initHeroLens(): () => void {
   const runIntro = () => {
     if (reduced) {
       state.introProgress = 1;
+      hideOpeningImmediate();
       headline?.classList.add('is-in');
       gsap.set(managedParts, { opacity: 1, y: 0 });
       triggerHeroOdometers({ instant: true });
@@ -430,6 +457,7 @@ export function initHeroLens(): () => void {
 
     if (window.scrollY > 24) {
       state.introProgress = 1;
+      hideOpeningImmediate();
       headline?.classList.add('is-in');
       gsap.set(managedParts, { opacity: 1, y: 0 });
       triggerHeroOdometers({ instant: true });
@@ -438,9 +466,9 @@ export function initHeroLens(): () => void {
       return;
     }
 
-    const revisit = hasSeenHero();
-    const expDur = revisit ? 0.55 : 1.45;
-    const partDur = revisit ? 0.42 : 0.68;
+    const revisit = hasSeenHeroInTab();
+    const expDur = revisit ? 0.55 : 1.55;
+    const partDur = revisit ? 0.42 : 0.65;
 
     introActive = true;
     state.introProgress = 0;
@@ -451,11 +479,134 @@ export function initHeroLens(): () => void {
       onUpdate: () => wake(),
       onComplete: () => {
         introActive = false;
+        hideOpeningImmediate();
         markSeenHero();
         window.removeEventListener('scroll', skipIntroIfRunning);
         draw();
       },
     });
+
+    // Full-stage HeyNesh-inspired kinetic wordmark opening on initial load & reload
+    if (!revisit && opening && openingWordmark) {
+      opening.style.display = 'flex';
+      gsap.set(opening, {
+        opacity: 1,
+        clipPath: 'inset(0% 0% 0% 0%)',
+      });
+      gsap.set(openingWordmark, {
+        xPercent: 44,
+        scale: 1.06,
+      });
+      if (openingChars.length > 0) {
+        gsap.set(openingChars, {
+          yPercent: 45,
+          opacity: 0,
+        });
+      }
+      if (openingLine) gsap.set(openingLine, { scaleX: 0 });
+      if (openingMeta) gsap.set(openingMeta, { opacity: 0, y: 10 });
+      if (watermarkText && isDesktop) {
+        gsap.set(watermarkText, { opacity: 0, yPercent: 32 });
+      }
+
+      // Beat 1 (0.00s - 0.88s): Giant ZARVAISM sweeps across center stage cleanly
+      introTl.to(
+        openingWordmark,
+        {
+          xPercent: 0,
+          scale: 1,
+          duration: 0.88,
+          ease: 'power4.out',
+        },
+        0
+      );
+      if (openingChars.length > 0) {
+        introTl.to(
+          openingChars,
+          {
+            yPercent: 0,
+            opacity: 1,
+            duration: 0.62,
+            stagger: 0.032,
+            ease: 'expo.out',
+          },
+          0.02
+        );
+      }
+      if (openingLine) {
+        introTl.to(
+          openingLine,
+          {
+            scaleX: 1,
+            duration: 0.68,
+            ease: 'power3.inOut',
+          },
+          0.16
+        );
+      }
+      if (openingMeta) {
+        introTl.to(
+          openingMeta,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.45,
+            ease: 'power2.out',
+          },
+          0.26
+        );
+      }
+
+      // Beat 2 (0.86s - 1.48s): Wordmark glides down as stage lifts via clip-path into the Hero
+      introTl.to(
+        openingWordmark,
+        {
+          yPercent: 32,
+          scale: 0.94,
+          opacity: 0.14,
+          duration: 0.52,
+          ease: 'power3.inOut',
+        },
+        0.84
+      );
+      if (openingMeta || openingLine) {
+        introTl.to(
+          [openingMeta, openingLine].filter(Boolean),
+          {
+            opacity: 0,
+            y: -8,
+            duration: 0.28,
+            ease: 'power2.in',
+          },
+          0.8
+        );
+      }
+      introTl.to(
+        opening,
+        {
+          clipPath: 'inset(0% 0% 100% 0%)',
+          duration: 0.62,
+          ease: 'power4.inOut',
+        },
+        0.88
+      );
+      if (watermarkText && isDesktop) {
+        introTl.to(
+          watermarkText,
+          {
+            opacity: 1,
+            yPercent: 18,
+            duration: 0.55,
+            ease: 'expo.out',
+          },
+          1.05
+        );
+      }
+    } else {
+      hideOpeningImmediate();
+    }
+
+    const heroRevealAt = revisit ? 0.02 : 0.96;
 
     introTl
       .to(
@@ -465,14 +616,14 @@ export function initHeroLens(): () => void {
           duration: expDur,
           ease: 'sine.inOut',
         },
-        0
+        revisit ? 0 : 0.12
       )
       .call(
         () => {
           headline?.classList.add('is-in');
         },
         undefined,
-        revisit ? 0.02 : 0.08
+        heroRevealAt
       )
       .to(
         managedParts,
@@ -480,18 +631,18 @@ export function initHeroLens(): () => void {
           opacity: 1,
           y: 0,
           duration: partDur,
-          stagger: revisit ? 0.04 : 0.075,
+          stagger: revisit ? 0.04 : 0.07,
           ease: 'expo.out',
           clearProps: 'transform',
         },
-        revisit ? 0.04 : 0.14
+        revisit ? 0.04 : 1.02
       )
       .call(
         () => {
           triggerHeroOdometers({ fast: revisit });
         },
         undefined,
-        revisit ? 0.08 : 0.28
+        revisit ? 0.08 : 1.16
       );
 
     wake();
@@ -709,5 +860,6 @@ export function initHeroLens(): () => void {
     io?.disconnect();
     mo.disconnect();
     if (heroCopy) gsap.set(heroCopy, { clearProps: 'transform,opacity' });
+    hideOpeningImmediate();
   };
 }

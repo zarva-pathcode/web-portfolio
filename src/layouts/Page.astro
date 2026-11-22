@@ -5,6 +5,7 @@ import SiteRail from '../components/SiteRail.astro';
 import NavMenu from '../components/NavMenu.astro';
 import BackToTop from '../components/BackToTop.astro';
 import ShellFooter from '../components/ShellFooter.astro';
+import RouteCurtain from '../components/RouteCurtain.astro';
 import QuickEditOverlay from '../components/admin/QuickEditOverlay.astro';
 import { getSection } from '../lib/cms/repository';
 import type { HeroSectionData, SettingsSectionData } from '../lib/cms/validators';
@@ -41,6 +42,7 @@ if (!Astro.locals.isAdmin) {
   </a>
   <SiteRail locale={locale} settings={settings} hero={hero} />
   <NavMenu locale={locale} settings={settings} hero={hero} />
+  <RouteCurtain brand={settings.brand} />
   <BackToTop />
   {Astro.locals.isAdmin && <QuickEditOverlay locale={locale} />}
   <div id="pointer-badge" class="pointer-badge" aria-hidden="true">
@@ -77,7 +79,7 @@ if (!Astro.locals.isAdmin) {
         b.setAttribute('aria-pressed', night ? 'true' : 'false');
       });
       var meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.setAttribute('content', night ? '#12100e' : '#f3efe6');
+      if (meta) meta.setAttribute('content', night ? '#141518' : '#f5f6f7');
     }
 
     function bindThemeButtons() {

@@ -36,12 +36,50 @@ const portraitSrc = hero.portraitUrl
   class="relative flex min-h-svh flex-col overflow-x-clip bg-canvas text-ink"
 >
   <div data-hero-stage class="relative mx-auto flex w-full max-w-[1440px] flex-1 flex-col">
+    <!-- HeyNesh-inspired first-load kinetic wordmark opening (zero-FOUC via html.js, auto-skipped on revisit/scroll/reduced-motion) -->
+    <div
+      data-hero-opening
+      aria-hidden="true"
+      class="hero-opening pointer-events-none fixed inset-0 z-[85] flex-col items-center justify-center overflow-hidden bg-canvas px-6 text-ink"
+    >
+      <div class="w-full max-w-[1360px] overflow-hidden py-4">
+        <p
+          data-opening-wordmark
+          class="display flex justify-center whitespace-nowrap text-[17vw] leading-[0.88] tracking-[-0.04em] text-ink sm:text-[15.5vw] lg:text-[14vw]"
+        >
+          {
+            settings.brand.split('').map((ch, idx) => (
+              <span
+                data-opening-char
+                class:list={['inline-block', idx === 0 && 'text-brand']}
+              >
+                {ch}
+              </span>
+            ))
+          }
+        </p>
+      </div>
+      <div class="mt-6 h-px w-48 overflow-hidden bg-[color:var(--hairline)] sm:w-72">
+        <div data-opening-line class="h-full w-full origin-left bg-brand"></div>
+      </div>
+      <p
+        data-opening-meta
+        class="label mt-4 text-center text-[0.625rem] tracking-[0.22em] text-subtle"
+      >
+        {settings.role.toUpperCase()} · {settings.shortLocation.toUpperCase()}
+      </p>
+    </div>
+
     <!-- Quiet lower-left desktop watermark echoing ShellFooter -->
     <div
+      data-hero-watermark
       aria-hidden="true"
       class="hero-watermark pointer-events-none absolute bottom-0 left-10 z-[1] hidden select-none overflow-hidden lg:block xl:left-16"
     >
-      <p class="display translate-y-[18%] text-[12vw] leading-[0.75] tracking-[-0.04em] text-ink">
+      <p
+        data-hero-watermark-text
+        class="display translate-y-[18%] text-[12vw] leading-[0.75] tracking-[-0.04em] text-ink"
+      >
         {settings.brand}
       </p>
     </div>
@@ -181,6 +219,25 @@ const portraitSrc = hero.portraitUrl
 </section>
 
 <style>
+  .hero-opening {
+    display: none;
+    will-change: clip-path, opacity;
+  }
+
+  /* Frame-0 zero-FOUC cover on fresh load & reload when JS is active and not an intra-app revisit */
+  :global(html.js:not(.hero-opening-skip)) .hero-opening {
+    display: flex;
+  }
+
+  :global(html.js:not(.hero-opening-skip)) .hero-opening [data-opening-char],
+  :global(html.js:not(.hero-opening-skip)) .hero-opening [data-opening-meta] {
+    opacity: 0;
+  }
+
+  :global(html.js:not(.hero-opening-skip)) .hero-opening [data-opening-line] {
+    transform: scaleX(0);
+  }
+
   .hero-watermark {
     opacity: 0.055;
   }
@@ -188,6 +245,12 @@ const portraitSrc = hero.portraitUrl
   :global(:root[data-theme='night']) .hero-watermark {
     opacity: 0.05;
     mix-blend-mode: soft-light;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-opening {
+      display: none !important;
+    }
   }
 
   .hero-lens-hint {

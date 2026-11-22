@@ -11,10 +11,19 @@ import { initExperience } from './experience';
 import { initWorkStage } from './workStage';
 import { initFaq } from './faq';
 import { initFooterAmbient } from './footerAmbient';
+import { initRouteCurtain } from './routeCurtain';
+
+declare global {
+  interface Window {
+    __zarvaMotionBooted?: boolean;
+    __zarvaBootCount?: number;
+  }
+}
 
 let ctx: gsap.Context | null = null;
 let cleanups: Array<() => void> = [];
 let initialized = false;
+let bootedForCurrentDocument = false;
 
 export function teardownMotion(): void {
   cleanups.forEach((fn) => {
@@ -38,7 +47,11 @@ export function teardownMotion(): void {
 export function bootMotion(): void {
   if (initialized) teardownMotion();
   initialized = true;
+  bootedForCurrentDocument = true;
+  window.__zarvaMotionBooted = true;
+  window.__zarvaBootCount = (window.__zarvaBootCount || 0) + 1;
 
+  initRouteCurtain();
   const stopEngine = initEngine();
   cleanups.push(stopEngine);
 
@@ -60,9 +73,10 @@ export function bootMotion(): void {
   });
 }
 
-// Astro View Transitions lifecycle
+// Astro View Transitions lifecycle — guarantees exactly ONE boot per page load / swap (no double-mount glitch!)
 document.addEventListener('astro:before-swap', () => {
   document.documentElement.classList.add('is-swapping');
+  bootedForCurrentDocument = false;
   teardownMotion();
 });
 
@@ -73,11 +87,13 @@ document.addEventListener('astro:after-swap', () => {
 });
 
 document.addEventListener('astro:page-load', () => {
-  bootMotion();
+  if (!bootedForCurrentDocument) {
+    bootMotion();
+  }
 });
 
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
   queueMicrotask(() => {
-    if (!initialized) bootMotion();
+    if (!bootedForCurrentDocument) bootMotion();
   });
 }

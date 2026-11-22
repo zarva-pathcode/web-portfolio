@@ -17,30 +17,30 @@
 
 :root,
 :root[data-theme='paper'] {
-  --canvas: #f3efe6;
-  --surface: #e8e2d6;
-  --hover: #ede7da;
-  --ink: #14110f;
-  --subtle: #6a6459;
-  --brand: #b4552f;
-  --brand-ink: #9e4526;
-  --signal: #5a6247;
-  --hairline: rgba(20, 17, 15, 0.14);
-  --scrim: rgba(243, 239, 230, 0.86);
+  --canvas: #f5f6f7;
+  --surface: #eceef1;
+  --hover: #e5e8ec;
+  --ink: #16181d;
+  --subtle: #575d68;
+  --brand: #3d5a73;
+  --brand-ink: #2f485e;
+  --signal: #4a6658;
+  --hairline: rgba(22, 24, 29, 0.13);
+  --scrim: rgba(245, 246, 247, 0.88);
   color-scheme: light;
 }
 
 :root[data-theme='night'] {
-  --canvas: #12100e;
-  --surface: #1c1916;
-  --hover: #1f1b18;
-  --ink: #f2ede3;
-  --subtle: #a39c8e;
-  --brand: #d2724b;
-  --brand-ink: #e08a63;
-  --signal: #8e9a76;
-  --hairline: rgba(242, 237, 227, 0.18);
-  --scrim: rgba(18, 16, 14, 0.86);
+  --canvas: #141518;
+  --surface: #1c1e22;
+  --hover: #23262c;
+  --ink: #e4e7ec;
+  --subtle: #98a0ad;
+  --brand: #7fa2be;
+  --brand-ink: #9ab9d1;
+  --signal: #82a896;
+  --hairline: rgba(228, 231, 236, 0.14);
+  --scrim: rgba(20, 21, 24, 0.88);
   color-scheme: dark;
 }
 
@@ -237,7 +237,7 @@ html.lenis body {
   }
   :root[data-theme='night'] .btn--solid {
     background-color: var(--brand);
-    color: #12100e;
+    color: var(--canvas);
   }
 
   .btn--ghost {
@@ -427,7 +427,7 @@ html.lenis body {
   }
 
   .mobile-dock {
-    box-shadow: 0 10px 30px rgba(20, 17, 15, 0.16);
+    box-shadow: 0 10px 30px rgba(22, 24, 29, 0.16);
   }
 
   /* Contextual Pointer Badge (Heynesh-inspired pill, native cursor stays visible) */
@@ -1156,17 +1156,37 @@ html.lenis body {
   transform: none;
 }
 
-/* Route change: soft dip instead of a hard cut. */
+/* Route change: dual-door split editorial curtain covers ClientRouter swaps smoothly. */
+.route-curtain {
+  visibility: hidden;
+  opacity: 0;
+  view-transition-name: route-curtain;
+}
+
+.curtain-leaf {
+  will-change: transform;
+}
+
+::view-transition-group(route-curtain) {
+  z-index: 9999;
+  animation: none;
+}
+
+::view-transition-old(route-curtain),
+::view-transition-new(route-curtain) {
+  animation: none;
+}
+
 main {
   transition: opacity 180ms var(--ease-hover);
 }
 
-html.is-swapping main {
-  opacity: 0.35;
-}
-
 /* Reduced motion: zero hidden elements, zero animations, unstacked Selected Work. */
 @media (prefers-reduced-motion: reduce) {
+  #route-curtain {
+    display: none !important;
+  }
+
   .marquee-track,
   .bento-svg *,
   .exp-spine-pulse,

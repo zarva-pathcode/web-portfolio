@@ -51,20 +51,27 @@ const personSchema = {
       (function () {
         function applyTheme() {
           document.documentElement.classList.add('js');
+          if (window.__zarvaInAppHeroVisited) {
+            document.documentElement.classList.add('hero-opening-skip');
+          }
           var theme = 'paper';
           try {
             var saved = localStorage.getItem('theme');
-            var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            theme = saved === 'paper' || saved === 'night' ? saved : prefersDark ? 'night' : 'paper';
+            theme = saved === 'paper' || saved === 'night' ? saved : 'paper';
           } catch (e) {}
           document.documentElement.dataset.theme = theme;
           var meta = document.querySelector('meta[name="theme-color"]');
-          if (meta) meta.setAttribute('content', theme === 'night' ? '#12100e' : '#f3efe6');
+          if (meta) meta.setAttribute('content', theme === 'night' ? '#141518' : '#f5f6f7');
         }
         applyTheme();
         if (!window.__zarvaThemeSwapBound) {
           window.__zarvaThemeSwapBound = true;
           document.addEventListener('astro:after-swap', applyTheme);
+          window.setTimeout(function () {
+            if (!window.__zarvaMotionBooted) {
+              document.documentElement.classList.add('hero-opening-skip');
+            }
+          }, 2400);
         }
       })();
     </script>
@@ -89,7 +96,7 @@ const personSchema = {
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
 
-    <meta name="theme-color" content="#f3efe6" />
+    <meta name="theme-color" content="#f5f6f7" />
     <meta name="color-scheme" content="light dark" />
 
     {alternateFor('en') && <link rel="alternate" hreflang="en" href={new URL(alternateFor('en')!, origin).toString()} />}
