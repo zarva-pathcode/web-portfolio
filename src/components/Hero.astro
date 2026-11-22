@@ -1,8 +1,7 @@
 ---
-import { Image } from 'astro:assets';
+import { getImage } from 'astro:assets';
 import { t, localePath, type Locale } from '../i18n';
-import halftoneLight from '../assets/hero-halftone-light.png';
-import halftoneDark from '../assets/hero-halftone-dark.png';
+import heroPhoto from '../assets/bg-image.jpg';
 import { site, heroTicker, heroStats } from '../data/site';
 import Ticker from './Ticker.astro';
 
@@ -12,15 +11,33 @@ interface Props {
 const { locale } = Astro.props;
 const tr = t(locale);
 const isId = locale === 'id';
+
+const optimizedPortrait = await getImage({
+  src: heroPhoto,
+  format: 'webp',
+  width: 1400,
+  quality: 86,
+});
 ---
 
-<section id="hero" class="relative flex min-h-svh flex-col bg-canvas text-ink">
-  <div class="mx-auto flex w-full max-w-[1440px] flex-1 flex-col">
-    <div class="relative flex min-w-0 flex-1 flex-col justify-between px-6 pt-8 pb-8 sm:px-10 sm:pt-12 lg:px-16">
-      <!-- quiet editorial top meta strip (scrolls naturally, no sticky top navbar) -->
+<section id="hero" class="relative flex min-h-svh flex-col overflow-x-clip bg-canvas text-ink">
+  <div data-hero-stage class="relative mx-auto flex w-full max-w-[1440px] flex-1 flex-col">
+    <!-- Quiet lower-left desktop watermark echoing ShellFooter -->
+    <div
+      aria-hidden="true"
+      class="hero-watermark pointer-events-none absolute bottom-0 left-10 z-[1] hidden select-none overflow-hidden lg:block xl:left-16"
+    >
+      <p class="display translate-y-[18%] text-[12vw] leading-[0.75] tracking-[-0.04em] text-ink">
+        {site.brand}
+      </p>
+    </div>
+
+    <div class="relative flex min-w-0 flex-1 flex-col justify-between px-5 pt-5 pb-4 sm:px-10 sm:pt-10 sm:pb-6 lg:px-16 lg:pt-12 lg:pb-8">
+      <!-- Quiet editorial top meta strip -->
       <div
         data-hero-eyebrow
-        class="mb-10 flex flex-wrap items-center justify-between gap-4 sm:mb-14"
+        data-hero-managed
+        class="relative z-10 mb-4 flex flex-wrap items-center justify-between gap-3 sm:mb-8 lg:mb-10"
       >
         <p class="label">
           <span class="text-brand">01</span> — <span data-scramble="view">{site.role.toUpperCase()}</span>
@@ -36,113 +53,146 @@ const isId = locale === 'id';
             data-scramble="hover"
             class="label hidden text-[0.5625rem] text-ink transition-colors hover:text-brand sm:inline-block"
           >
-            {isId ? 'CV ↗' : 'CV ↗'}
+            CV ↗
           </a>
         </div>
       </div>
 
-      <div class="grid min-w-0 flex-1 items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(300px,42%)] lg:gap-6">
-        <!-- copy -->
-        <div class="relative z-10">
-          <h1 class="display text-[2.75rem] sm:text-[4.25rem] lg:text-[5rem]" data-split>
-            {tr['hero.headline']}
-          </h1>
+      <!-- Single responsive canvas stage: edge-to-edge 16/10 portrait banner on mobile, full-stage split-bleed on desktop -->
+      <div
+        data-hero-canvas-wrap
+        class="relative -mx-5 mb-5 aspect-[16/10] w-[calc(100%+2.5rem)] overflow-hidden sm:-mx-10 sm:w-[calc(100%+5rem)] lg:pointer-events-none lg:absolute lg:inset-0 lg:z-0 lg:mx-0 lg:mb-0 lg:aspect-auto lg:h-full lg:w-full"
+      >
+        <canvas
+          data-hero-canvas
+          data-hero-src={optimizedPortrait.src}
+          class="block h-full w-full"
+          aria-hidden="true"
+        ></canvas>
+        <img
+          data-hero-source
+          src={optimizedPortrait.src}
+          alt={`Portrait of ${site.name}`}
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+          class="sr-only"
+        />
+        <noscript>
+          <img
+            src={optimizedPortrait.src}
+            alt={`Portrait of ${site.name}`}
+            class="h-full w-full object-cover object-top"
+          />
+        </noscript>
+      </div>
 
-          <p
-            data-hero-sub
-            class="mt-7 max-w-[32rem] text-base leading-relaxed text-subtle sm:text-[1.0625rem]"
-          >
-            {tr['hero.sub']}
-          </p>
+      <!-- Whisper-quiet desktop-only optical lens cue, fades out after first portrait hover -->
+      <span
+        data-hero-lens-hint
+        aria-hidden="true"
+        class="hero-lens-hint pointer-events-none absolute right-10 top-24 z-10 hidden items-center gap-2 border border-[color:var(--hairline)] bg-[color:var(--scrim)] px-2.5 py-1 label text-[0.5625rem] text-brand lg:inline-flex xl:right-16"
+      >
+        <span class="size-1.5 rounded-full bg-brand"></span>
+        {isId ? 'ARAHKAN KURSOR' : 'HOVER LENS'}
+      </span>
 
-          <div data-hero-cta class="mt-9 flex flex-wrap items-center gap-3">
-            <a href="#projects" data-magnetic class="btn btn--solid btn-roll">
-              <span class="btn-roll__track">
-                <span class="btn-roll__text">{tr['hero.ctaPrimary']}</span>
-                <span class="btn-roll__text btn-roll__text--clone" aria-hidden="true">
-                  {tr['hero.ctaPrimary']}
-                </span>
+      <!-- Foreground editorial copy -->
+      <div
+        data-hero-copy
+        class="relative z-10 my-auto max-w-[34rem] lg:max-w-[49%] lg:py-6"
+      >
+        <h1
+          class="display text-[2.35rem] leading-[1.02] sm:text-[3.75rem] lg:text-[4.85rem]"
+          data-split
+          data-hero-managed
+        >
+          {tr['hero.headline']} <span class="text-brand">{tr['hero.headlineAccent']}</span>
+        </h1>
+
+        <p
+          data-hero-sub
+          data-hero-managed
+          class="mt-4 max-w-[30rem] text-[0.9375rem] leading-relaxed text-subtle sm:mt-6 sm:text-[1.0625rem]"
+        >
+          {tr['hero.sub']}
+        </p>
+
+        <div data-hero-cta data-hero-managed class="mt-6 flex flex-wrap items-center gap-3 sm:mt-8">
+          <a href="#projects" data-magnetic class="btn btn--solid btn-roll">
+            <span class="btn-roll__track">
+              <span class="btn-roll__text">{tr['hero.ctaPrimary']}</span>
+              <span class="btn-roll__text btn-roll__text--clone" aria-hidden="true">
+                {tr['hero.ctaPrimary']}
               </span>
-            </a>
-            <a href="#contact" data-magnetic class="btn btn--ghost btn-roll">
-              <span class="btn-roll__track">
-                <span class="btn-roll__text">{tr['hero.ctaSecondary']}</span>
-                <span class="btn-roll__text btn-roll__text--clone" aria-hidden="true">
-                  {tr['hero.ctaSecondary']}
-                </span>
+            </span>
+          </a>
+          <a href="#contact" data-magnetic class="btn btn--ghost btn-roll">
+            <span class="btn-roll__track">
+              <span class="btn-roll__text">{tr['hero.ctaSecondary']}</span>
+              <span class="btn-roll__text btn-roll__text--clone" aria-hidden="true">
+                {tr['hero.ctaSecondary']}
               </span>
-            </a>
-          </div>
-
-          <dl data-hero-stats class="mt-12 flex flex-wrap items-end gap-12">
-            {
-              heroStats.map((stat) => (
-                <div>
-                  <dd
-                    class="display text-[3rem] leading-none"
-                    data-odometer={stat.value}
-                  >
-                    {stat.value}
-                  </dd>
-                  <dt class="label mt-2">{stat.label[locale]}</dt>
-                </div>
-              ))
-            }
-          </dl>
+            </span>
+          </a>
         </div>
 
-        <!-- halftone portrait: one per ground, crossfaded on theme switch -->
-        <div class="relative">
-          <div
-            class="relative mx-auto aspect-[1140/780] w-full max-w-[640px] lg:mr-0"
-            data-portrait
-            data-reveal="screen"
-          >
-            <Image
-              src={halftoneLight}
-              alt={`Portrait of ${site.name}, rendered as a clay halftone`}
-              widths={[600, 900, 1140]}
-              sizes="(min-width: 1024px) 40vw, 90vw"
-              loading="eager"
-              fetchpriority="high"
-              class="halftone halftone--light absolute inset-0 h-full w-full object-contain"
-            />
-            <Image
-              src={halftoneDark}
-              alt=""
-              aria-hidden="true"
-              widths={[600, 900, 1140]}
-              sizes="(min-width: 1024px) 40vw, 90vw"
-              loading="eager"
-              class="halftone halftone--dark absolute inset-0 h-full w-full object-contain"
-            />
-          </div>
-          <p class="label mt-6 text-brand" data-scramble="view">Halftone / my-profile</p>
-        </div>
+        <dl
+          data-hero-stats
+          data-hero-managed
+          class="mt-8 flex flex-wrap items-end gap-10 sm:mt-11 sm:gap-12"
+        >
+          {
+            heroStats.map((stat) => (
+              <div>
+                <dd
+                  class="display text-[2.65rem] leading-none sm:text-[3rem]"
+                  data-odometer={stat.value}
+                  data-hero-managed
+                >
+                  {stat.value}
+                </dd>
+                <dt class="label mt-2">{stat.label[locale]}</dt>
+              </div>
+            ))
+          }
+        </dl>
       </div>
     </div>
   </div>
 
-  <div class="mt-6">
+  <div class="relative z-10 mt-auto pt-4 sm:pt-6">
     <Ticker items={[...heroTicker]} speed={42} />
   </div>
 </section>
 
 <style>
-  .halftone {
-    transition: opacity 420ms var(--ease-enter);
+  .hero-watermark {
+    opacity: 0.055;
   }
-  :global(:root[data-theme='paper']) .halftone--dark,
-  :global(:root:not([data-theme])) .halftone--dark {
-    opacity: 0;
+
+  :global(:root[data-theme='night']) .hero-watermark {
+    opacity: 0.05;
+    mix-blend-mode: soft-light;
   }
-  :global(:root[data-theme='night']) .halftone--light {
+
+  .hero-lens-hint {
+    transition: opacity 360ms var(--ease-hover);
+  }
+
+  .hero-lens-hint[data-dismissed='true'] {
     opacity: 0;
   }
 
+  @media (hover: none), (pointer: coarse) {
+    .hero-lens-hint {
+      display: none !important;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .halftone {
-      transition: none;
+    .hero-lens-hint {
+      display: none !important;
     }
   }
 </style>

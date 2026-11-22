@@ -31,3 +31,6 @@ pnpm-debug.log*
 
 # Playwright output from the scripts/ gates — regenerated on every run
 tmp-refshots/
+
+# brainstorm visual companion sessions
+.superpowers/

@@ -31,7 +31,7 @@ export const site = {
     en: 'AVAILABLE FOR WORK',
     id: 'TERSEDIA UNTUK PROYEK',
   },
-  headline: 'Crafting mobile and web apps that feel effortless to use.',
+  headline: "Most apps stop when code works. I don't.",
   description:
     'Mobile and Frontend Developer working with Flutter, React and TypeScript. Builds production apps with Clean Architecture, BLoC state management and clean REST API integration.',
 } as const;

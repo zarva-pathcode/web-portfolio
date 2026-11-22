@@ -32,6 +32,10 @@ const locale: Locale = localeFromPath(Astro.url.pathname);
   <div id="pointer-badge" class="pointer-badge" aria-hidden="true">
     <span data-badge-text>OPEN CASE →</span>
   </div>
+  <div id="custom-cursor" class="z-cursor" aria-hidden="true">
+    <span class="z-cursor__ring" data-cursor-ring></span>
+    <span class="z-cursor__dot" data-cursor-dot></span>
+  </div>
   <div class="pb-24 sm:pb-0 sm:pl-[60px]">
     <main id="main" class="bg-canvas text-ink">
       <slot />

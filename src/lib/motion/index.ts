@@ -3,6 +3,7 @@ import ScrollTrigger from 'gsap/ScrollTrigger';
 import { initEngine } from './engine';
 import { initReveals } from './reveals';
 import { initOdometers } from './odometer';
+import { initHeroLens } from './heroLens';
 import { initScramble } from './scramble';
 import { initTactile } from './tactile';
 import { initRail } from './rail';
@@ -44,6 +45,7 @@ export function bootMotion(): void {
   ctx = gsap.context(() => {
     cleanups.push(initReveals());
     initOdometers();
+    cleanups.push(initHeroLens());
     cleanups.push(initScramble());
     cleanups.push(initTactile());
     cleanups.push(initRail());

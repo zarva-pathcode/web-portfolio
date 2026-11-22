@@ -47,7 +47,33 @@ function buildOdometerDom(el: HTMLElement, text: string): ReelSlot[] {
   return slots;
 }
 
+let heroOdometerGroups: ReelSlot[][] = [];
+
+export function triggerHeroOdometers(opts: { fast?: boolean; instant?: boolean } = {}): void {
+  const instant = Boolean(opts.instant) || isReducedMotion();
+  const duration = opts.fast ? 0.45 : 0.95;
+  const baseDelay = opts.fast ? 0.04 : 0.12;
+
+  heroOdometerGroups.forEach((slots) => {
+    slots.forEach((s, i) => {
+      if (instant) {
+        gsap.killTweensOf(s.strip);
+        gsap.set(s.strip, { yPercent: -s.current * 10 });
+      } else {
+        gsap.to(s.strip, {
+          yPercent: -s.current * 10,
+          duration,
+          delay: baseDelay + i * 0.05,
+          ease: 'power3.out',
+          overwrite: 'auto',
+        });
+      }
+    });
+  });
+}
+
 export function initOdometers(): void {
+  heroOdometerGroups = [];
   const els = document.querySelectorAll<HTMLElement>('[data-odometer]');
   if (!els.length) return;
 
@@ -66,8 +92,14 @@ export function initOdometers(): void {
     }
 
     const inHero = Boolean(el.closest('#hero'));
+    const managedByHero = inHero && el.hasAttribute('data-hero-managed');
 
     slots.forEach((s) => gsap.set(s.strip, { yPercent: 0 }));
+
+    if (managedByHero) {
+      heroOdometerGroups.push(slots);
+      return;
+    }
 
     const run = () => {
       slots.forEach((s, i) => {

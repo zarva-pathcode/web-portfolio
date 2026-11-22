@@ -107,43 +107,6 @@ function initPointerBadge(cleanups: Array<() => void>): void {
   });
 }
 
-function initPortraitParallax(cleanups: Array<() => void>): void {
-  const stage = document.querySelector<HTMLElement>('[data-portrait]');
-  if (!stage || isReducedMotion() || !prefersFinePointer()) return;
-
-  const imgs = Array.from(stage.querySelectorAll<HTMLElement>('img'));
-  if (!imgs.length) return;
-
-  const xSetters = imgs.map((img) =>
-    gsap.quickTo(img, 'x', { duration: 0.55, ease: 'power3.out' })
-  );
-  const ySetters = imgs.map((img) =>
-    gsap.quickTo(img, 'y', { duration: 0.55, ease: 'power3.out' })
-  );
-
-  const onMove = (e: PointerEvent) => {
-    const r = stage.getBoundingClientRect();
-    const dx = ((e.clientX - r.left) / r.width - 0.5) * 14;
-    const dy = ((e.clientY - r.top) / r.height - 0.5) * 10;
-    xSetters.forEach((fn) => fn(dx));
-    ySetters.forEach((fn) => fn(dy));
-  };
-
-  const onLeave = () => {
-    xSetters.forEach((fn) => fn(0));
-    ySetters.forEach((fn) => fn(0));
-  };
-
-  stage.addEventListener('pointermove', onMove);
-  stage.addEventListener('pointerleave', onLeave);
-
-  cleanups.push(() => {
-    stage.removeEventListener('pointermove', onMove);
-    stage.removeEventListener('pointerleave', onLeave);
-    imgs.forEach((img) => gsap.set(img, { clearProps: 'x,y' }));
-  });
-}
-
 async function copyText(text: string): Promise<boolean> {
   try {
     if (navigator.clipboard && window.isSecureContext) {
@@ -212,11 +175,131 @@ function initCopyEmail(cleanups: Array<() => void>): void {
   });
 }
 
+function initCustomCursor(cleanups: Array<() => void>): void {
+  const root = document.getElementById('custom-cursor');
+  if (!root) return;
+
+  const isDesktopFine =
+    !isReducedMotion() &&
+    typeof window !== 'undefined' &&
+    window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  if (!isDesktopFine) {
+    document.documentElement.classList.remove('has-custom-cursor');
+    root.removeAttribute('data-active');
+    return;
+  }
+
+  const dot = root.querySelector<HTMLElement>('[data-cursor-dot]');
+  const ring = root.querySelector<HTMLElement>('[data-cursor-ring]');
+  if (!dot || !ring) return;
+
+  document.documentElement.classList.add('has-custom-cursor');
+
+  const dotX = gsap.quickTo(dot, 'x', { duration: 0.04, ease: 'none' });
+  const dotY = gsap.quickTo(dot, 'y', { duration: 0.04, ease: 'none' });
+  const ringX = gsap.quickTo(ring, 'x', { duration: 0.22, ease: 'power3.out' });
+  const ringY = gsap.quickTo(ring, 'y', { duration: 0.22, ease: 'power3.out' });
+
+  const INTERACTIVE_SEL =
+    'a, button, [role="button"], summary, label, [data-magnetic], [data-exp-item], [data-faq-item] button';
+  const TEXT_SEL = 'input[type="text"], input[type="email"], input[type="search"], textarea';
+
+  let visible = false;
+
+  const setState = (next: 'default' | 'hover' | 'portrait' | 'badge' | 'text') => {
+    if (next === 'default') root.removeAttribute('data-state');
+    else root.setAttribute('data-state', next);
+  };
+
+  const resolveState = (target: HTMLElement | null, clientX: number): void => {
+    if (!target) {
+      setState('default');
+      return;
+    }
+    if (target.closest(TEXT_SEL)) {
+      setState('text');
+      return;
+    }
+    if (target.closest('[data-cursor-label]')) {
+      setState('badge');
+      return;
+    }
+    if (target.closest(INTERACTIVE_SEL)) {
+      setState('hover');
+      return;
+    }
+    const hero = target.closest<HTMLElement>('#hero');
+    if (hero) {
+      const r = hero.getBoundingClientRect();
+      if (clientX > r.left + r.width * 0.44) {
+        setState('portrait');
+        return;
+      }
+    }
+    setState('default');
+  };
+
+  const onMove = (e: PointerEvent) => {
+    if (e.pointerType !== 'mouse') {
+      document.documentElement.classList.remove('has-custom-cursor');
+      root.removeAttribute('data-active');
+      visible = false;
+      return;
+    }
+
+    if (!visible) {
+      gsap.set([dot, ring], { x: e.clientX, y: e.clientY });
+      root.setAttribute('data-active', 'true');
+      visible = true;
+    } else {
+      dotX(e.clientX);
+      dotY(e.clientY);
+      ringX(e.clientX);
+      ringY(e.clientY);
+    }
+
+    resolveState(e.target as HTMLElement | null, e.clientX);
+  };
+
+  const onDown = (e: PointerEvent) => {
+    if (e.pointerType !== 'mouse') return;
+    root.setAttribute('data-pressed', 'true');
+  };
+
+  const onUp = () => {
+    root.removeAttribute('data-pressed');
+  };
+
+  const onLeave = () => {
+    visible = false;
+    root.removeAttribute('data-active');
+    root.removeAttribute('data-pressed');
+  };
+
+  document.addEventListener('pointermove', onMove, { passive: true });
+  document.addEventListener('pointerdown', onDown, { passive: true });
+  document.addEventListener('pointerup', onUp, { passive: true });
+  document.documentElement.addEventListener('pointerleave', onLeave, { passive: true });
+  window.addEventListener('blur', onLeave);
+
+  cleanups.push(() => {
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerdown', onDown);
+    document.removeEventListener('pointerup', onUp);
+    document.documentElement.removeEventListener('pointerleave', onLeave);
+    window.removeEventListener('blur', onLeave);
+    root.removeAttribute('data-active');
+    root.removeAttribute('data-pressed');
+    root.removeAttribute('data-state');
+  });
+}
+
 export function initTactile(): () => void {
   const cleanups: Array<() => void> = [];
+  initCustomCursor(cleanups);
   initMagnetic(cleanups);
   initPointerBadge(cleanups);
-  initPortraitParallax(cleanups);
   initCopyEmail(cleanups);
 
   return () => {

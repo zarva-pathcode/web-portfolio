@@ -2,30 +2,47 @@ import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
 import { isReducedMotion } from './engine';
 
-function prepareSplitWords(el: HTMLElement): void {
+export function prepareSplitWords(el: HTMLElement): void {
   if (el.dataset.splitReady === '1') return;
   el.dataset.splitReady = '1';
 
-  const text = (el.textContent || '').trim();
-  if (!text) return;
+  const fullText = (el.textContent || '').replace(/\s+/g, ' ').trim();
+  if (!fullText) return;
 
-  el.setAttribute('aria-label', text);
-  const words = text.split(/\s+/);
+  const segments: Array<{ word: string; className: string }> = [];
+
+  const collect = (node: Node, inheritedClass: string) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const words = (node.textContent || '').trim().split(/\s+/).filter(Boolean);
+      for (const word of words) {
+        segments.push({ word, className: inheritedClass });
+      }
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      const elem = node as HTMLElement;
+      const cls = [inheritedClass, elem.className].filter(Boolean).join(' ').trim();
+      Array.from(elem.childNodes).forEach((child) => collect(child, cls));
+    }
+  };
+
+  Array.from(el.childNodes).forEach((child) => collect(child, ''));
+  if (!segments.length) return;
+
+  el.setAttribute('aria-label', fullText);
   el.textContent = '';
 
-  words.forEach((word, i) => {
+  segments.forEach((seg, i) => {
     const outer = document.createElement('span');
     outer.className = 'word';
     outer.setAttribute('aria-hidden', 'true');
 
     const inner = document.createElement('span');
-    inner.className = 'word-inner';
-    inner.textContent = word;
+    inner.className = seg.className ? `word-inner ${seg.className}` : 'word-inner';
+    inner.textContent = seg.word;
     inner.style.setProperty('--i', String(i));
 
     outer.appendChild(inner);
     el.appendChild(outer);
-    if (i < words.length - 1) {
+    if (i < segments.length - 1) {
       el.appendChild(document.createTextNode(' '));
     }
   });
@@ -35,7 +52,7 @@ export function initReveals(): () => void {
   const reduced = isReducedMotion();
   const cleanups: Array<() => void> = [];
 
-  // 1. Word-split headings (Hero = instant once; below-fold = Heynesh reverse onLeaveBack)
+  // 1. Word-split headings (Hero = instant or heroLens-managed; below-fold = reverse onLeaveBack)
   document.querySelectorAll<HTMLElement>('[data-split]').forEach((el) => {
     prepareSplitWords(el);
     if (reduced) {
@@ -44,6 +61,7 @@ export function initReveals(): () => void {
     }
 
     if (el.closest('#hero')) {
+      if (el.hasAttribute('data-hero-managed')) return;
       requestAnimationFrame(() => {
         requestAnimationFrame(() => el.classList.add('is-in'));
       });
@@ -57,34 +75,30 @@ export function initReveals(): () => void {
     }
   });
 
-  // 2. Hero instant choreography (< 1.1s, no blocking curtain, never reverses at top)
+  // 2. Hero instant choreography for any non-heroLens-managed elements
   const hero = document.getElementById('hero');
   if (hero) {
     const heroParts = hero.querySelectorAll<HTMLElement>(
-      '[data-hero-eyebrow], [data-hero-sub], [data-hero-cta], [data-hero-stats]'
+      '[data-hero-eyebrow]:not([data-hero-managed]), [data-hero-sub]:not([data-hero-managed]), [data-hero-cta]:not([data-hero-managed]), [data-hero-stats]:not([data-hero-managed])'
     );
-    const heroMedia = hero.querySelector<HTMLElement>('[data-reveal="screen"]');
 
-    if (reduced) {
-      heroParts.forEach((el) => gsap.set(el, { opacity: 1, y: 0 }));
-      heroMedia?.classList.add('is-in');
-    } else {
-      gsap.fromTo(
-        heroParts,
-        { opacity: 0, y: 16 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.65,
-          stagger: 0.08,
-          delay: 0.08,
-          ease: 'expo.out',
-          clearProps: 'transform',
-        }
-      );
-
-      if (heroMedia) {
-        gsap.delayedCall(0.14, () => heroMedia.classList.add('is-in'));
+    if (heroParts.length) {
+      if (reduced) {
+        heroParts.forEach((el) => gsap.set(el, { opacity: 1, y: 0 }));
+      } else {
+        gsap.fromTo(
+          heroParts,
+          { opacity: 0, y: 16 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.65,
+            stagger: 0.08,
+            delay: 0.08,
+            ease: 'expo.out',
+            clearProps: 'transform',
+          }
+        );
       }
     }
   }
@@ -93,8 +107,6 @@ export function initReveals(): () => void {
   //    Play when entering from bottom; reverse cleanly when scrolling back up past threshold.
   const targets = document.querySelectorAll<HTMLElement>('[data-reveal], [data-stagger]');
   targets.forEach((el) => {
-    if (el.closest('#hero') && el.getAttribute('data-reveal') === 'screen') return;
-
     if (el.hasAttribute('data-stagger')) {
       Array.from(el.children).forEach((child, i) => {
         (child as HTMLElement).style.setProperty(

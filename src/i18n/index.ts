@@ -13,9 +13,10 @@ const en = {
   'nav.contrastOn': 'Turn off high contrast',
   'nav.contrastOff': 'Turn on high contrast',
 
-  'hero.headline': 'Crafting mobile and web apps that feel effortless to use.',
+  'hero.headline': 'Most apps stop when code works.',
+  'hero.headlineAccent': "I don't.",
   'hero.sub':
-    'I build Flutter and React front-ends with clean architecture — taking complex requirements and turning them into interfaces people pick up without a tutorial.',
+    'Mobile & frontend engineer building Flutter and React products — from clean architecture to the last pixel of motion.',
   'hero.ctaPrimary': 'Explore Work',
   'hero.ctaSecondary': 'Get in touch',
 
@@ -124,9 +125,10 @@ const id: Record<TranslationKey, string> = {
   'nav.contrastOn': 'Matikan kontras tinggi',
   'nav.contrastOff': 'Nyalakan kontras tinggi',
 
-  'hero.headline': 'Membangun aplikasi mobile dan web yang terasa mudah dipakai.',
+  'hero.headline': 'Kebanyakan aplikasi berhenti saat kodenya jalan.',
+  'hero.headlineAccent': 'Saya tidak.',
   'hero.sub':
-    'Saya membangun front-end dengan Flutter dan React di atas arsitektur yang bersih — mengubah requirement rumit menjadi antarmuka yang bisa dipakai tanpa perlu tutorial.',
+    'Mobile & frontend engineer yang membangun produk Flutter dan React — dari arsitektur bersih sampai detail interaksi terakhir.',
   'hero.ctaPrimary': 'Lihat Karya',
   'hero.ctaSecondary': 'Hubungi Saya',
 
