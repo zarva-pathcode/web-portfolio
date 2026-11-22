@@ -1,35 +1,36 @@
 ---
-import { howIWorkSteps } from '../../data/site';
+import { getDefaultSection } from '../../lib/cms/defaults';
+import type { HowSectionData } from '../../lib/cms/validators';
 import type { Locale } from '../../i18n';
 
 interface Props {
   locale: Locale;
+  how?: HowSectionData;
 }
-const { locale } = Astro.props;
+const { locale, how = getDefaultSection('how') } = Astro.props;
 const isId = locale === 'id';
 ---
 
-<section id="how" class="border-t border-[color:var(--hairline)] bg-canvas text-ink">
+<section
+  id="how"
+  data-cms-section="how"
+  class="border-t border-[color:var(--hairline)] bg-canvas text-ink"
+>
   <div class="mx-auto max-w-[1440px] px-5 py-20 sm:px-10 lg:px-16 lg:py-28">
     <div class="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-end">
       <div>
         <p class="label mb-8">
-          <span class="text-brand">03</span> — <span data-scramble="view">{isId ? 'CARA KERJA' : 'HOW I WORK'}</span>
+          <span class="text-brand">03</span> · <span data-scramble="view">{isId ? 'CARA KERJA' : 'HOW I WORK'}</span>
         </p>
         <h2 class="display text-[2.25rem] sm:text-[3.25rem]" data-reveal="press" data-split>
-          {isId ? 'Empat langkah, tanpa kejutan.' : 'Four steps, no surprises.'}
+          {how.title[locale]}
         </h2>
       </div>
       <p class="max-w-[30rem] text-base leading-relaxed text-subtle lg:justify-self-end" data-reveal="ink">
-        {
-          isId
-            ? 'Proses yang sama untuk prototipe dua minggu maupun produk enam bulan. Kamu selalu tahu apa yang sedang diputuskan, dan kenapa.'
-            : 'The same process whether it is a two-week prototype or a six-month product. You always know what is being decided, and why.'
-        }
+        {how.lede[locale]}
       </p>
     </div>
 
-    <!-- Horizontal progress connector above desktop 4-col grid -->
     <div class="relative mt-16 mb-5 hidden items-center lg:grid lg:grid-cols-4 lg:gap-4" aria-hidden="true">
       <div class="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[color:var(--hairline)]"></div>
       <div
@@ -37,7 +38,7 @@ const isId = locale === 'id';
         class="step-connector-fill absolute inset-x-0 top-1/2 h-[1.5px] -translate-y-1/2 bg-brand"
       ></div>
       {
-        howIWorkSteps.map(() => (
+        how.steps.map(() => (
           <div class="relative z-10 flex items-center pl-6">
             <span class="size-2.5 rounded-full border border-brand bg-canvas"></span>
           </div>
@@ -45,14 +46,13 @@ const isId = locale === 'id';
       }
     </div>
 
-    <!-- 4-Column Step Cards (equal height, zero misalignment) -->
     <ol
       data-how-grid
       class="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:mt-0 lg:grid-cols-4"
       data-stagger
     >
       {
-        howIWorkSteps.map((s) => (
+        how.steps.map((s) => (
           <li
             data-step-card
             class="step-card group flex flex-col justify-between border border-[color:var(--hairline)] bg-[color:var(--surface)]/55 p-6 transition-colors duration-200 hover:border-[color:var(--brand)] hover:bg-[color:var(--hover)]"

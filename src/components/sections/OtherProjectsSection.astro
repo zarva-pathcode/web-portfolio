@@ -1,33 +1,40 @@
 ---
-import { archive } from '../../data/site';
+import { getDefaultSection } from '../../lib/cms/defaults';
+import type { OtherProjectsSectionData } from '../../lib/cms/validators';
 import type { Locale } from '../../i18n';
 
 interface Props {
   locale: Locale;
+  otherProjects?: OtherProjectsSectionData;
 }
-const { locale } = Astro.props;
+const { locale, otherProjects = getDefaultSection('other_projects') } = Astro.props;
 const isId = locale === 'id';
 
 const head = isId
   ? ['TAHUN', 'PROYEK', 'STACK', 'ARTEFAK']
   : ['YEAR', 'PROJECT', 'STACK', 'ARTIFACT'];
 
+const archive = otherProjects.items;
 const years = archive.map((a) => Number(a.year)).filter((y) => !Number.isNaN(y));
 const minYear = years.length ? Math.min(...years) : '';
 const maxYear = years.length ? Math.max(...years) : '';
-const yearSpan = minYear && maxYear ? (minYear === maxYear ? `${minYear}` : `${minYear}—${maxYear}`) : '';
+const yearSpan = minYear && maxYear ? (minYear === maxYear ? `${minYear}` : `${minYear}-${maxYear}`) : '';
 const summaryLine = isId
   ? `${archive.length} proyek dirilis${yearSpan ? ` · ${yearSpan}` : ''}`
   : `${archive.length} shipped projects${yearSpan ? ` · ${yearSpan}` : ''}`;
 ---
 
-<section id="other" class="border-t border-[color:var(--hairline)] bg-canvas text-ink">
+<section
+  id="other"
+  data-cms-section="other_projects"
+  class="border-t border-[color:var(--hairline)] bg-canvas text-ink"
+>
   <div class="mx-auto max-w-[1440px] px-5 py-20 sm:px-10 lg:px-16 lg:py-28">
     <p class="label mb-8">
-      <span class="text-brand">06</span> — <span data-scramble="view">{isId ? 'PROYEK LAIN' : 'OTHER PROJECTS'}</span>
+      <span class="text-brand">06</span> · <span data-scramble="view">{isId ? 'PROYEK LAIN' : 'OTHER PROJECTS'}</span>
     </p>
     <h2 class="display mb-4 text-[2.25rem] sm:text-[3.25rem]" data-reveal="press" data-split>
-      {isId ? 'Proyek lain.' : 'Other projects.'}
+      {otherProjects.title[locale]}
     </h2>
     <p class="label mb-14">{summaryLine}</p>
 

@@ -1,20 +1,19 @@
 ---
-import { Image } from 'astro:assets';
-import type { CollectionEntry } from 'astro:content';
 import Page from '../layouts/Page.astro';
+import { renderMarkdownSafe } from '../lib/cms/markdown';
+import type { ProjectRecord } from '../lib/cms/repository';
 import { localePath, type Locale } from '../i18n';
 
 interface Props {
-  project: CollectionEntry<'projects'>;
+  project: ProjectRecord;
   locale: Locale;
-  next?: { id: string; title: string };
+  next?: { slug: string; title: string };
   index?: number;
   total?: number;
 }
 
-const { project, locale, next, index = 1, total = 3 } = Astro.props;
+const { project: d, locale, next, index = 1, total = 3 } = Astro.props;
 const isId = locale === 'id';
-const d = project.data;
 
 const spec = [
   { k: isId ? 'Perangkat' : 'Device', v: d.platform },
@@ -28,12 +27,13 @@ const blocks = [
   { n: '02', k: isId ? 'PENDEKATAN' : 'APPROACH', v: d.approach },
   { n: '03', k: isId ? 'HASIL' : 'RESULT', v: d.result },
 ];
+
+const bodyHtml = d.bodyMarkdown ? renderMarkdownSafe(d.bodyMarkdown) : '';
 ---
 
-<Page title={`${d.title} — ${d.role}`} description={d.summary}>
-  <article class="bg-canvas text-ink">
+<Page title={`${d.title} | ${d.role}`} description={d.summary}>
+  <article data-cms-section="projects" data-cms-item-id={d.id} class="bg-canvas text-ink">
     <div class="mx-auto max-w-[1440px] px-5 sm:px-10 lg:px-16">
-      <!-- top bar -->
       <div class="flex items-center justify-between border-b border-[color:var(--hairline)] py-4">
         <a
           href={localePath(locale, '/#projects')}
@@ -45,10 +45,9 @@ const blocks = [
         <span class="label text-brand">{String(index).padStart(2, '0')} / {String(total).padStart(2, '0')}</span>
       </div>
 
-      <!-- title block -->
       <header class="pt-14 pb-12">
         <p class="label mb-6">
-          <span class="text-brand" data-scramble="view">{isId ? 'STUDI KASUS' : 'CASE STUDY'}</span> — {d.category}
+          <span class="text-brand" data-scramble="view">{isId ? 'STUDI KASUS' : 'CASE STUDY'}</span> · {d.category}
         </p>
         <h1 class="display text-[3.25rem] leading-[0.95] sm:text-[6rem] lg:text-[8rem]" data-split>
           {d.title}
@@ -58,19 +57,16 @@ const blocks = [
         </p>
       </header>
 
-      <!-- cover -->
       <figure class="border border-[color:var(--hairline)] bg-[color:var(--surface)] p-4 sm:p-8" data-reveal="screen">
-        <Image
-          src={d.cover}
+        <img
+          src={d.coverUrl}
           alt={d.coverAlt}
-          widths={[720, 1200, 1600]}
-          sizes="(min-width: 1024px) 85vw, 95vw"
           class="mx-auto h-auto w-full object-contain"
           loading="eager"
+          decoding="async"
         />
       </figure>
 
-      <!-- spec sheet -->
       <dl
         class="mt-10 grid grid-cols-2 gap-x-8 gap-y-6 border-b border-[color:var(--hairline)] pb-10 sm:grid-cols-4"
         data-stagger
@@ -89,18 +85,16 @@ const blocks = [
         }
       </dl>
 
-      <!-- lede -->
       <p class="display max-w-[54rem] py-14 text-[1.75rem] leading-[1.25] sm:text-[2.5rem]" data-reveal="ink">
         {d.summary}
       </p>
 
-      <!-- problem / approach / result -->
       <div class="grid gap-12 border-t border-[color:var(--hairline)] py-14 lg:grid-cols-2" data-stagger>
         <div class="space-y-10">
           {
             blocks.slice(0, 2).map((b) => (
               <section>
-                <p class="label mb-4 text-brand">{b.n} — {b.k}</p>
+                <p class="label mb-4 text-brand">{b.n} · {b.k}</p>
                 <p class="max-w-[34rem] text-[0.9375rem] leading-[1.7] text-subtle">{b.v}</p>
               </section>
             ))
@@ -108,17 +102,24 @@ const blocks = [
         </div>
         <div class="space-y-10">
           <section>
-            <p class="label mb-4 text-brand">{blocks[2].n} — {blocks[2].k}</p>
+            <p class="label mb-4 text-brand">{blocks[2].n} · {blocks[2].k}</p>
             <p class="max-w-[34rem] text-[0.9375rem] leading-[1.7] text-subtle">{blocks[2].v}</p>
           </section>
         </div>
       </div>
 
-      <!-- impact -->
+      {
+        bodyHtml && (
+          <div class="border-t border-[color:var(--hairline)] py-12">
+            <div class="prose max-w-3xl" set:html={bodyHtml} />
+          </div>
+        )
+      }
+
       {
         d.metrics.length > 0 && (
           <div class="border-t border-[color:var(--hairline)] py-14">
-            <p class="label mb-8">Impact</p>
+            <p class="label mb-8">{isId ? 'Hasil Terukur' : 'Key Numbers'}</p>
             <dl class="flex flex-wrap gap-x-16 gap-y-8" data-stagger>
               {d.metrics.map((m) => (
                 <div>
@@ -131,21 +132,19 @@ const blocks = [
         )
       }
 
-      <!-- gallery -->
       {
         d.gallery.length > 0 && (
           <div class="border-t border-[color:var(--hairline)] py-14">
-            <p class="label mb-8">Gallery</p>
+            <p class="label mb-8">{isId ? 'Galeri' : 'Gallery'}</p>
             <div class="grid gap-4 sm:grid-cols-2" data-stagger>
-              {d.gallery.map((img) => (
+              {d.gallery.map((imgUrl) => (
                 <div class="border border-[color:var(--hairline)] bg-[color:var(--surface)] p-3">
-                  <Image
-                    src={img}
-                    alt={`${d.title} — ${isId ? 'tangkapan layar' : 'screenshot'}`}
-                    widths={[600, 900]}
-                    sizes="(min-width: 640px) 45vw, 90vw"
+                  <img
+                    src={imgUrl}
+                    alt={`${d.title} (${isId ? 'tangkapan layar' : 'screenshot'})`}
                     class="h-auto w-full object-contain"
                     loading="lazy"
+                    decoding="async"
                   />
                 </div>
               ))}
@@ -154,15 +153,14 @@ const blocks = [
         )
       }
 
-      <!-- highlights + links -->
       <div class="grid gap-12 border-t border-[color:var(--hairline)] py-14 lg:grid-cols-[1.4fr_1fr]">
         <div>
-          <p class="label mb-6">Highlights</p>
+          <p class="label mb-6">{isId ? 'Sorotan' : 'Highlights'}</p>
           <ul class="space-y-3" data-stagger>
             {
               d.highlights.map((h) => (
                 <li class="flex gap-4 text-[0.9375rem] leading-relaxed text-ink">
-                  <span class="text-brand">—</span>
+                  <span class="text-brand">-</span>
                   <span>{h}</span>
                 </li>
               ))
@@ -170,7 +168,7 @@ const blocks = [
           </ul>
         </div>
         <div>
-          <p class="label mb-6">Links</p>
+          <p class="label mb-6">{isId ? 'Tautan' : 'Links'}</p>
           <ul class="space-y-3">
             {
               d.links.length === 0 && (
@@ -194,11 +192,10 @@ const blocks = [
         </div>
       </div>
 
-      <!-- next -->
       {
         next && (
           <a
-            href={localePath(locale, `/projects/${next.id}`)}
+            href={localePath(locale, `/projects/${next.slug}`)}
             data-cursor-label={isId ? 'BERIKUTNYA →' : 'NEXT CASE →'}
             class="group flex items-end justify-between border-t border-[color:var(--hairline)] py-12 transition-colors hover:bg-[color:var(--hover)] sm:px-3"
           >

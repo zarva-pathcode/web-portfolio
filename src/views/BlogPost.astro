@@ -1,72 +1,94 @@
 ---
-import { render } from 'astro:content';
-import type { CollectionEntry } from 'astro:content';
 import Page from '../layouts/Page.astro';
+import { estimateReadingTime, renderMarkdownSafe } from '../lib/cms/markdown';
+import type { PostRecord } from '../lib/cms/repository';
 import { t, localePath, type Locale } from '../i18n';
 
 interface Props {
-  post: CollectionEntry<'posts'>;
+  post: PostRecord;
   locale: Locale;
 }
 const { post, locale } = Astro.props;
 const tr = t(locale);
-const { Content } = await render(post);
+const isId = locale === 'id';
 
+const parsedDate = new Date(post.pubDate);
 const dateLabel = new Intl.DateTimeFormat(locale === 'id' ? 'id-ID' : 'en-GB', {
   day: 'numeric',
   month: 'long',
   year: 'numeric',
-}).format(post.data.pubDate);
+}).format(Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate);
 
-/*
- * A post exists in exactly one language — the filename is the slug, and the
- * two languages use different filenames. Only the language it was written in is
- * declared, which is the correct signal: telling search engines about a
- * translation that does not exist sends them to a 404.
- */
-const alternates = { [post.data.lang]: localePath(post.data.lang, `/blog/${post.id}`) };
+const contentHtml = renderMarkdownSafe(post.bodyMarkdown);
+const readMin = estimateReadingTime(post.bodyMarkdown);
+const alternates = { [post.lang]: localePath(post.lang, `/blog/${post.slug}`) };
 ---
 
 <Page
-  title={post.data.title}
-  description={post.data.description}
+  title={post.title}
+  description={post.description}
+  image={post.coverUrl || undefined}
   article
   alternates={alternates}
 >
-  <article class="mx-auto max-w-[1440px] px-5 py-20 sm:px-10 lg:px-16 lg:py-28">
-    <a
-      href={localePath(locale, '/blog')}
-      class="group inline-flex items-center gap-2 text-sm text-subtle transition-colors hover:text-ink"
-    >
-      <svg viewBox="0 0 24 24" class="size-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M19 12H5M11 18l-6-6 6-6" />
-      </svg>
-      {tr['blog.back']}
-    </a>
+  <article data-cms-section="blog" data-cms-item-id={post.id} class="mx-auto max-w-[1440px] px-5 py-20 sm:px-10 lg:px-16 lg:py-28">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <a
+        href={localePath(locale, '/blog')}
+        class="group inline-flex items-center gap-2 text-sm text-subtle transition-colors hover:text-ink"
+      >
+        <svg viewBox="0 0 24 24" class="size-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5M11 18l-6-6 6-6" />
+        </svg>
+        {tr['blog.back']}
+      </a>
+
+      {
+        !post.published && (
+          <span class="label border border-brand/40 bg-brand/10 px-2.5 py-1 text-[0.5625rem] text-brand">
+            DRAFT PREVIEW
+          </span>
+        )
+      }
+    </div>
 
     <header class="mt-12 max-w-3xl">
       <p class="flex flex-wrap items-center gap-3 font-mono text-xs text-subtle">
-        <time datetime={post.data.pubDate.toISOString()}>{dateLabel}</time>
+        <time datetime={post.pubDate}>{dateLabel}</time>
+        <span aria-hidden="true">·</span>
+        <span>{readMin} {tr['blog.minRead']}</span>
         {
-          post.data.tags.length > 0 && (
+          post.tags.length > 0 && (
             <>
               <span aria-hidden="true">·</span>
-              <span>{post.data.tags.join(' · ')}</span>
+              <span>{post.tags.join(' · ')}</span>
             </>
           )
         }
       </p>
       <h1 class="display mt-5 text-[2.25rem] sm:text-[3rem] md:text-[3.5rem]">
-        {post.data.title}
+        {post.title}
       </h1>
-      <p class="mt-6 text-base leading-relaxed text-subtle md:text-lg">{post.data.description}</p>
+      <p class="mt-6 text-base leading-relaxed text-subtle md:text-lg">{post.description}</p>
     </header>
 
-    <div class="prose reveal mt-14 max-w-3xl">
-      <Content />
-    </div>
+    {
+      post.coverUrl && (
+        <figure class="mt-12 max-w-4xl border border-[color:var(--hairline)] bg-[color:var(--surface)] p-3">
+          <img
+            src={post.coverUrl}
+            alt={post.title}
+            class="h-auto w-full object-cover"
+            loading="eager"
+            decoding="async"
+          />
+        </figure>
+      )
+    }
 
-    <div class="mt-16 border-t border-[color:var(--hairline)] pt-8">
+    <div class="prose mt-14 max-w-3xl" set:html={contentHtml} />
+
+    <div class="mt-16 flex flex-wrap items-center justify-between gap-4 border-t border-[color:var(--hairline)] pt-8">
       <a
         href={localePath(locale, '/blog')}
         class="group inline-flex items-center gap-2 text-sm font-medium text-ink"
@@ -76,6 +98,14 @@ const alternates = { [post.data.lang]: localePath(post.data.lang, `/blog/${post.
           <path d="M19 12H5M11 18l-6-6 6-6" />
         </svg>
       </a>
+
+      {
+        Astro.locals.isAdmin && (
+          <a href={`/admin?tab=blog&edit=${post.id}`} class="label text-brand hover:underline">
+            {isId ? 'EDIT ARTIKEL INI →' : 'EDIT THIS POST →'}
+          </a>
+        )
+      }
     </div>
   </article>
 </Page>

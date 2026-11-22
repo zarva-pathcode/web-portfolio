@@ -1,11 +1,18 @@
 ---
-import { site } from '../data/site';
+import { getDefaultSection } from '../lib/cms/defaults';
+import type { HeroSectionData, SettingsSectionData } from '../lib/cms/validators';
 import { localePath, type Locale } from '../i18n';
 
 interface Props {
   locale: Locale;
+  settings?: SettingsSectionData;
+  hero?: HeroSectionData;
 }
-const { locale } = Astro.props;
+const {
+  locale,
+  settings = getDefaultSection('settings'),
+  hero = getDefaultSection('hero'),
+} = Astro.props;
 const isId = locale === 'id';
 const here = Astro.url.pathname;
 const isHome = here === '/' || here === '/id/' || here === '/id';
@@ -26,28 +33,25 @@ const sections = [
   aria-label={isId ? 'Navigasi utama' : 'Primary navigation'}
   class="fixed inset-y-0 left-0 z-[70] hidden w-[60px] flex-col justify-between border-r border-[color:var(--hairline)] bg-[color:var(--surface)] sm:flex"
 >
-  <!-- Vertical clay scroll progress bar along the right rail spine -->
   <div class="rail-progress" data-rail-progress aria-hidden="true"></div>
 
-  <!-- Top zone: Z Monogram brand anchor + availability dot -->
   <div class="border-b border-[color:var(--hairline)]">
     <a
       href={homeBase}
       data-magnetic="soft"
       class="rail-item group relative flex h-[78px] flex-col items-center justify-center gap-2 transition-colors hover:bg-[color:var(--hover)]"
-      aria-label={`${site.brand} — ${isId ? 'Beranda' : 'Home'}`}
+      aria-label={`${settings.brand} | ${isId ? 'Beranda' : 'Home'}`}
     >
       <span class="display text-[1.55rem] leading-none text-ink transition-colors group-hover:text-brand">
         Z
       </span>
       <span class="size-1.5 rounded-full bg-signal" aria-hidden="true"></span>
       <span class="rail-tooltip" aria-hidden="true">
-        {site.brand} · {site.availability[locale]}
+        {settings.brand} · {hero.availability[locale]}
       </span>
     </a>
   </div>
 
-  <!-- Center zone: 01–07 interactive section spine with slide-out tooltips -->
   <nav
     aria-label={isId ? 'Indeks bagian halaman' : 'Section index'}
     class="flex flex-1 flex-col items-center justify-center gap-4 py-4"
@@ -73,7 +77,6 @@ const sections = [
     }
   </nav>
 
-  <!-- Bottom zone: rotating theme toggle + morphing 2-line hamburger -->
   <div class="border-t border-[color:var(--hairline)]">
     <button
       type="button"

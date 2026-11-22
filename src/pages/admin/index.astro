@@ -1,0 +1,210 @@
+---
+import Base from '../../layouts/Base.astro';
+import {
+  getAllSections,
+  listExperiences,
+  listMedia,
+  listPosts,
+  listProjects,
+} from '../../lib/cms/repository';
+
+const [sections, experiences, projects, posts, media] = await Promise.all([
+  getAllSections(),
+  listExperiences(),
+  listProjects({ includeDrafts: true }),
+  listPosts({ includeDrafts: true }),
+  listMedia().catch(() => []),
+]);
+
+const initialState = {
+  sections,
+  experiences,
+  projects,
+  posts,
+  media,
+  adminEmail: Astro.locals.adminEmail || sections.settings.email,
+};
+
+const escapedJson = JSON.stringify(initialState).replace(/</g, '\\u003c');
+
+const navGroups: Array<{
+  title: string;
+  items: Array<{ id: string; label: string; count?: number }>;
+}> = [
+  {
+    title: 'STUDIO',
+    items: [{ id: 'overview', label: 'Overview' }],
+  },
+  {
+    title: 'SECTIONS (EN & ID)',
+    items: [
+      { id: 'hero', label: '01 · Hero' },
+      { id: 'about', label: '02 · About & Bento' },
+      { id: 'how', label: '03 · How I Work' },
+      { id: 'other_projects', label: '06 · Archive Table' },
+      { id: 'faq', label: '07 · FAQ' },
+      { id: 'cv', label: 'CV Data' },
+      { id: 'settings', label: 'Footer & Settings' },
+    ],
+  },
+  {
+    title: 'COLLECTIONS & BLOG',
+    items: [
+      { id: 'experiences', label: '04 · Experiences', count: experiences.length },
+      { id: 'projects', label: '05 · Projects', count: projects.length },
+      { id: 'blog', label: 'Blog Writing', count: posts.length },
+      { id: 'media', label: 'Media Library', count: media.length },
+    ],
+  },
+];
+---
+
+<Base title={`CMS Admin — ${sections.settings.brand}`} description="Zarvaism Content Management Studio">
+  <div class="min-h-dvh bg-canvas text-ink">
+    <!-- Top Bar -->
+    <header class="sticky top-0 z-30 border-b border-[color:var(--hairline)] bg-[color:var(--surface)]/90 backdrop-blur-md">
+      <div class="mx-auto flex w-full max-w-[1560px] flex-wrap items-center justify-between gap-4 px-5 py-3.5 sm:px-8">
+        <div class="flex items-center gap-4">
+          <span class="display text-2xl leading-none">{sections.settings.brand}</span>
+          <span class="label text-[0.5625rem] text-brand">STUDIO CMS</span>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+          <button type="button" id="cms-theme-btn" class="btn btn--ghost h-9 cursor-pointer px-3 text-[0.5625rem]">
+            PAPER / NIGHT
+          </button>
+          <button type="button" id="cms-seed-btn" class="btn btn--ghost h-9 cursor-pointer px-3 text-[0.5625rem]">
+            SYNC DEFAULTS
+          </button>
+          <a href="/" class="btn btn--ghost h-9 px-3 text-[0.5625rem]">
+            LIVE SITE ↗
+          </a>
+          <button type="button" id="cms-logout-btn" class="btn btn--solid h-9 cursor-pointer px-4 text-[0.5625rem]">
+            LOGOUT
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div class="mx-auto grid w-full max-w-[1560px] md:grid-cols-[288px_1fr]">
+      <!-- Sidebar Navigation -->
+      <aside
+        aria-label="CMS Navigation"
+        class="min-w-0 border-b border-[color:var(--hairline)] bg-[color:var(--surface)]/30 md:sticky md:top-[65px] md:h-[calc(100dvh-65px)] md:overflow-y-auto md:border-r md:border-b-0 md:px-5 md:py-8"
+      >
+        <div class="cms-nav-scroll flex items-center gap-2 overflow-x-auto px-5 py-3 md:block md:space-y-7 md:overflow-visible md:p-0">
+          {
+            navGroups.map((grp) => (
+              <div class="flex shrink-0 items-center gap-1.5 md:block">
+                <p class="label hidden md:mb-2.5 md:block md:px-3 md:text-[0.5625rem] md:tracking-[0.2em] md:text-subtle">
+                  {grp.title}
+                </p>
+                <div class="flex items-center gap-1.5 md:flex-col md:items-stretch md:gap-1">
+                  {grp.items.map((it) => (
+                    <button
+                      type="button"
+                      data-cms-tab={it.id}
+                      data-active="false"
+                      class="cms-nav-item"
+                    >
+                      <span class="truncate">{it.label}</span>
+                      {it.count !== undefined && (
+                        <span data-cms-count={it.id} class="cms-nav-count">
+                          {it.count}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      </aside>
+
+      <!-- Main Editor Stage -->
+      <main id="cms-stage" class="min-w-0 px-5 py-8 sm:px-8 lg:px-12"></main>
+    </div>
+  </div>
+
+  <style>
+    .cms-nav-scroll {
+      scrollbar-width: none;
+    }
+    .cms-nav-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    .cms-nav-item {
+      display: inline-flex;
+      flex-shrink: 0;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      white-space: nowrap;
+      border-radius: 2px;
+      border: 1px solid var(--hairline);
+      padding: 0.45rem 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      line-height: 1.3;
+      color: var(--subtle);
+      background: transparent;
+      cursor: pointer;
+      transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+    }
+
+    .cms-nav-item:hover {
+      background: var(--hover);
+      color: var(--ink);
+    }
+
+    .cms-nav-item[data-active='true'] {
+      border-color: var(--brand);
+      background: var(--hover);
+      color: var(--brand);
+    }
+
+    .cms-nav-count {
+      display: inline-flex;
+      min-width: 1.35rem;
+      height: 1.25rem;
+      align-items: center;
+      justify-content: center;
+      padding: 0 0.35rem;
+      border-radius: 2px;
+      background: color-mix(in srgb, var(--ink) 6%, transparent);
+      font-size: 0.625rem;
+      line-height: 1;
+      color: var(--subtle);
+    }
+
+    .cms-nav-item[data-active='true'] .cms-nav-count {
+      background: color-mix(in srgb, var(--brand) 14%, transparent);
+      color: var(--brand);
+    }
+
+    @media (min-width: 768px) {
+      .cms-nav-item {
+        width: 100%;
+        border: 0;
+        border-left: 2px solid transparent;
+        padding: 0.625rem 0.75rem;
+        text-align: left;
+      }
+
+      .cms-nav-item[data-active='true'] {
+        border-left-color: var(--brand);
+        background: var(--hover);
+        color: var(--brand);
+      }
+    }
+  </style>
+
+  <div id="cms-toast" hidden role="status" aria-live="polite"></div>
+
+  <script id="cms-initial-state" type="application/json" set:html={escapedJson} />
+  <script>
+    import '../../lib/cms/adminClient.ts';
+  </script>
+</Base>

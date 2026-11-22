@@ -1,42 +1,39 @@
 ---
-import { getCollection } from 'astro:content';
-import { Image } from 'astro:assets';
+import { listProjects, type ProjectRecord } from '../../lib/cms/repository';
 import { localePath, type Locale } from '../../i18n';
 
 interface Props {
   locale: Locale;
+  projects?: ProjectRecord[];
 }
-const { locale } = Astro.props;
+const { locale, projects: passedProjects } = Astro.props;
 const isId = locale === 'id';
 
-const projects = (await getCollection('projects'))
-  .filter((p) => p.data.featured)
-  .sort((a, b) => a.data.order - b.data.order);
-
+const projects = passedProjects ?? (await listProjects({ featuredOnly: true }));
 const totalStr = String(projects.length).padStart(2, '0');
 const cursorLabel = isId ? 'BUKA KASUS →' : 'OPEN CASE →';
 ---
 
 <section
   id="projects"
+  data-cms-section="projects"
   data-work-section
   class="border-t border-[color:var(--hairline)] bg-canvas text-ink"
 >
   <div class="mx-auto max-w-[1440px] px-5 py-20 sm:px-10 lg:px-16 lg:py-28">
-    <!-- Single crisp header (no duplicate title or blank gap) -->
     <div class="mb-14 flex flex-wrap items-end justify-between gap-6">
       <div>
         <p class="label mb-6">
-          <span class="text-brand">05</span> — <span data-scramble="view">{isId ? 'KARYA PILIHAN' : 'SELECTED WORK'}</span>
+          <span class="text-brand">05</span> · <span data-scramble="view">{isId ? 'KARYA PILIHAN' : 'SELECTED WORK'}</span>
         </p>
         <h2 class="display text-[2.25rem] sm:text-[3.5rem]" data-reveal="press" data-split>
-          {isId ? 'Buka satu studi kasus.' : 'Open a case.'}
+          {isId ? 'Studi kasus pilihan.' : 'Selected case studies.'}
         </h2>
       </div>
 
       <div class="flex items-baseline gap-5">
         <span class="label hidden sm:inline">
-          {isId ? 'GULIR UNTUK MENJELAJAH' : 'SCROLL TO EXPLORE'}
+          {isId ? 'INDEKS KARYA' : 'CASE INDEX'}
         </span>
         <span class="numeral inline-flex items-baseline gap-1 text-base text-ink">
           <span data-work-counter-current>01</span>
@@ -46,13 +43,12 @@ const cursorLabel = isId ? 'BUKA KASUS →' : 'OPEN CASE →';
       </div>
     </div>
 
-    <!-- Full-Width Stacking Editorial Showcase Cards (60% Visual Stage + 40% Brief) -->
     <div class="space-y-8 lg:space-y-14">
       {
         projects.map((p, i) => {
-          const href = localePath(locale, `/projects/${p.id}`);
+          const href = localePath(locale, `/projects/${p.slug}`);
           const idxStr = String(i + 1).padStart(2, '0');
-          const topMetric = p.data.metrics[0];
+          const topMetric = p.metrics[0];
           return (
             <article
               data-work-card
@@ -63,17 +59,16 @@ const cursorLabel = isId ? 'BUKA KASUS →' : 'OPEN CASE →';
                 data-work-card-inner
                 class="grid overflow-hidden border border-[color:var(--hairline)] bg-canvas shadow-[0_-14px_40px_rgba(20,17,15,0.07)] lg:grid-cols-[1.38fr_0.92fr]"
               >
-                <!-- Left 60%: Commanding Visual Showcase Stage -->
                 <a
                   href={href}
                   data-cursor-label={cursorLabel}
-                  aria-label={`${p.data.title} — ${isId ? 'Buka studi kasus' : 'Open case study'}`}
+                  aria-label={`${p.title} | ${isId ? 'Buka studi kasus' : 'Open case study'}`}
                   class="work-preview-frame group relative block aspect-[16/11] w-full border-b border-[color:var(--hairline)] bg-[color:var(--surface)] lg:aspect-auto lg:h-[540px] lg:border-r lg:border-b-0"
                 >
                   <div class="work-preview-zoom relative h-full w-full p-5 sm:p-8 lg:p-10">
-                    {p.data.video && (
+                    {p.videoUrl && (
                       <video
-                        src={p.data.video}
+                        src={p.videoUrl}
                         muted
                         loop
                         playsinline
@@ -83,20 +78,19 @@ const cursorLabel = isId ? 'BUKA KASUS →' : 'OPEN CASE →';
                         class="pointer-events-none absolute inset-0 h-full w-full object-contain p-5 opacity-0 transition-opacity duration-500 sm:p-8 lg:p-10"
                       />
                     )}
-                    <Image
-                      src={p.data.cover}
-                      alt={p.data.coverAlt}
-                      widths={[720, 1100, 1400]}
-                      sizes="(min-width: 1024px) 58vw, 94vw"
+                    <img
+                      src={p.coverUrl}
+                      alt={p.coverAlt}
+                      loading="lazy"
+                      decoding="async"
                       class="h-full w-full object-contain"
                     />
                   </div>
                   <span class="label pointer-events-none absolute bottom-4 left-5 text-[0.5625rem] text-subtle/80">
-                    {p.data.panelLabel}
+                    {p.panelLabel}
                   </span>
                 </a>
 
-                <!-- Right 40%: Editorial Brief, Stack, Top Metric & Tactile CTA -->
                 <div class="flex flex-col justify-between p-6 sm:p-9 lg:p-11">
                   <div>
                     <div class="flex items-center justify-between gap-4 border-b border-[color:var(--hairline)] pb-5">
@@ -104,24 +98,24 @@ const cursorLabel = isId ? 'BUKA KASUS →' : 'OPEN CASE →';
                         {idxStr} <span class="text-subtle">/ {totalStr}</span>
                       </span>
                       <span class="label text-[0.5625rem]">
-                        {p.data.year} · {p.data.category}
+                        {p.year} · {p.category}
                       </span>
                     </div>
 
                     <h3 class="display mt-7 text-[2.25rem] leading-[1.02] sm:text-[3rem]">
                       <a href={href} class="transition-colors hover:text-brand">
-                        {p.data.title}
+                        {p.title}
                       </a>
                     </h3>
 
-                    <p class="label mt-3 text-signal">{p.data.platform} · {p.data.role}</p>
+                    <p class="label mt-3 text-signal">{p.platform} · {p.role}</p>
 
                     <p class="mt-5 text-sm leading-relaxed text-subtle sm:text-[0.9375rem]">
-                      {p.data.summary}
+                      {p.summary}
                     </p>
 
                     <div class="mt-6 flex flex-wrap gap-1.5">
-                      {p.data.stack.slice(0, 5).map((tech) => <span class="tag">{tech}</span>)}
+                      {p.stack.slice(0, 5).map((tech) => <span class="tag">{tech}</span>)}
                     </div>
                   </div>
 

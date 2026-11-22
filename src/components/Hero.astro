@@ -1,26 +1,40 @@
 ---
 import { getImage } from 'astro:assets';
-import { t, localePath, type Locale } from '../i18n';
+import { localePath, type Locale } from '../i18n';
 import heroPhoto from '../assets/bg-image.jpg';
-import { site, heroTicker, heroStats } from '../data/site';
+import { getDefaultSection } from '../lib/cms/defaults';
+import type { HeroSectionData, SettingsSectionData } from '../lib/cms/validators';
 import Ticker from './Ticker.astro';
 
 interface Props {
   locale: Locale;
+  hero?: HeroSectionData;
+  settings?: SettingsSectionData;
 }
-const { locale } = Astro.props;
-const tr = t(locale);
+const {
+  locale,
+  hero = getDefaultSection('hero'),
+  settings = getDefaultSection('settings'),
+} = Astro.props;
 const isId = locale === 'id';
 
-const optimizedPortrait = await getImage({
-  src: heroPhoto,
-  format: 'webp',
-  width: 1400,
-  quality: 86,
-});
+const portraitSrc = hero.portraitUrl
+  ? hero.portraitUrl
+  : (
+      await getImage({
+        src: heroPhoto,
+        format: 'webp',
+        width: 1400,
+        quality: 86,
+      })
+    ).src;
 ---
 
-<section id="hero" class="relative flex min-h-svh flex-col overflow-x-clip bg-canvas text-ink">
+<section
+  id="hero"
+  data-cms-section="hero"
+  class="relative flex min-h-svh flex-col overflow-x-clip bg-canvas text-ink"
+>
   <div data-hero-stage class="relative mx-auto flex w-full max-w-[1440px] flex-1 flex-col">
     <!-- Quiet lower-left desktop watermark echoing ShellFooter -->
     <div
@@ -28,7 +42,7 @@ const optimizedPortrait = await getImage({
       class="hero-watermark pointer-events-none absolute bottom-0 left-10 z-[1] hidden select-none overflow-hidden lg:block xl:left-16"
     >
       <p class="display translate-y-[18%] text-[12vw] leading-[0.75] tracking-[-0.04em] text-ink">
-        {site.brand}
+        {settings.brand}
       </p>
     </div>
 
@@ -40,13 +54,13 @@ const optimizedPortrait = await getImage({
         class="relative z-10 mb-4 flex flex-wrap items-center justify-between gap-3 sm:mb-8 lg:mb-10"
       >
         <p class="label">
-          <span class="text-brand">01</span> — <span data-scramble="view">{site.role.toUpperCase()}</span>
+          <span class="text-brand">01</span> · <span data-scramble="view">{hero.eyebrowRole.toUpperCase()}</span>
         </p>
 
         <div class="flex items-center gap-5">
           <span class="label inline-flex items-center gap-2 text-[0.5625rem] text-signal">
             <span class="size-1.5 rounded-full bg-signal" aria-hidden="true"></span>
-            {site.availability[locale]}
+            {hero.availability[locale]}
           </span>
           <a
             href={localePath(locale, '/cv')}
@@ -58,21 +72,21 @@ const optimizedPortrait = await getImage({
         </div>
       </div>
 
-      <!-- Single responsive canvas stage: edge-to-edge 16/10 portrait banner on mobile, full-stage split-bleed on desktop -->
+      <!-- Single responsive canvas stage -->
       <div
         data-hero-canvas-wrap
         class="relative -mx-5 mb-5 aspect-[16/10] w-[calc(100%+2.5rem)] overflow-hidden sm:-mx-10 sm:w-[calc(100%+5rem)] lg:pointer-events-none lg:absolute lg:inset-0 lg:z-0 lg:mx-0 lg:mb-0 lg:aspect-auto lg:h-full lg:w-full"
       >
         <canvas
           data-hero-canvas
-          data-hero-src={optimizedPortrait.src}
+          data-hero-src={portraitSrc}
           class="block h-full w-full"
           aria-hidden="true"
         ></canvas>
         <img
           data-hero-source
-          src={optimizedPortrait.src}
-          alt={`Portrait of ${site.name}`}
+          src={portraitSrc}
+          alt={`Portrait of ${settings.name}`}
           loading="eager"
           fetchpriority="high"
           decoding="async"
@@ -80,14 +94,14 @@ const optimizedPortrait = await getImage({
         />
         <noscript>
           <img
-            src={optimizedPortrait.src}
-            alt={`Portrait of ${site.name}`}
+            src={portraitSrc}
+            alt={`Portrait of ${settings.name}`}
             class="h-full w-full object-cover object-top"
           />
         </noscript>
       </div>
 
-      <!-- Whisper-quiet desktop-only optical lens cue, fades out after first portrait hover -->
+      <!-- Whisper-quiet desktop-only optical spotlight cue -->
       <span
         data-hero-lens-hint
         aria-hidden="true"
@@ -107,7 +121,7 @@ const optimizedPortrait = await getImage({
           data-split
           data-hero-managed
         >
-          {tr['hero.headline']} <span class="text-brand">{tr['hero.headlineAccent']}</span>
+          {hero.headline[locale]} <span class="text-brand">{hero.headlineAccent[locale]}</span>
         </h1>
 
         <p
@@ -115,23 +129,23 @@ const optimizedPortrait = await getImage({
           data-hero-managed
           class="mt-4 max-w-[30rem] text-[0.9375rem] leading-relaxed text-subtle sm:mt-6 sm:text-[1.0625rem]"
         >
-          {tr['hero.sub']}
+          {hero.sub[locale]}
         </p>
 
         <div data-hero-cta data-hero-managed class="mt-6 flex flex-wrap items-center gap-3 sm:mt-8">
           <a href="#projects" data-magnetic class="btn btn--solid btn-roll">
             <span class="btn-roll__track">
-              <span class="btn-roll__text">{tr['hero.ctaPrimary']}</span>
+              <span class="btn-roll__text">{hero.ctaPrimary[locale]}</span>
               <span class="btn-roll__text btn-roll__text--clone" aria-hidden="true">
-                {tr['hero.ctaPrimary']}
+                {hero.ctaPrimary[locale]}
               </span>
             </span>
           </a>
           <a href="#contact" data-magnetic class="btn btn--ghost btn-roll">
             <span class="btn-roll__track">
-              <span class="btn-roll__text">{tr['hero.ctaSecondary']}</span>
+              <span class="btn-roll__text">{hero.ctaSecondary[locale]}</span>
               <span class="btn-roll__text btn-roll__text--clone" aria-hidden="true">
-                {tr['hero.ctaSecondary']}
+                {hero.ctaSecondary[locale]}
               </span>
             </span>
           </a>
@@ -143,7 +157,7 @@ const optimizedPortrait = await getImage({
           class="mt-8 flex flex-wrap items-end gap-10 sm:mt-11 sm:gap-12"
         >
           {
-            heroStats.map((stat) => (
+            hero.stats.map((stat) => (
               <div>
                 <dd
                   class="display text-[2.65rem] leading-none sm:text-[3rem]"
@@ -162,7 +176,7 @@ const optimizedPortrait = await getImage({
   </div>
 
   <div class="relative z-10 mt-auto pt-4 sm:pt-6">
-    <Ticker items={[...heroTicker]} speed={42} />
+    <Ticker items={[...hero.ticker]} speed={42} />
   </div>
 </section>
 

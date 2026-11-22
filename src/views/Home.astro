@@ -1,4 +1,5 @@
 ---
+import { getAllSections, listExperiences, listProjects } from '../lib/cms/repository';
 import Page from '../layouts/Page.astro';
 import Hero from '../components/Hero.astro';
 import AboutSection from '../components/sections/AboutSection.astro';
@@ -13,14 +14,20 @@ interface Props {
   locale: Locale;
 }
 const { locale } = Astro.props;
+
+const [sections, experienceList, featuredProjects] = await Promise.all([
+  getAllSections(),
+  listExperiences(),
+  listProjects({ featuredOnly: true, includeDrafts: false }),
+]);
 ---
 
-<Page>
-  <Hero locale={locale} />
-  <AboutSection locale={locale} />
-  <HowIWork locale={locale} />
-  <ExperienceSection locale={locale} />
-  <WorkSection locale={locale} />
-  <OtherProjectsSection locale={locale} />
-  <FaqSection locale={locale} />
+<Page settings={sections.settings} hero={sections.hero}>
+  <Hero locale={locale} hero={sections.hero} settings={sections.settings} />
+  <AboutSection locale={locale} about={sections.about} />
+  <HowIWork locale={locale} how={sections.how} />
+  <ExperienceSection locale={locale} experiences={experienceList} />
+  <WorkSection locale={locale} projects={featuredProjects} />
+  <OtherProjectsSection locale={locale} otherProjects={sections.other_projects} />
+  <FaqSection locale={locale} faq={sections.faq} />
 </Page>

@@ -1,30 +1,35 @@
 ---
-import { getCollection, type CollectionEntry } from 'astro:content';
 import ProjectDetail from '../../../views/ProjectDetail.astro';
+import NotFound from '../../../views/NotFound.astro';
+import { listProjects } from '../../../lib/cms/repository';
 
-export async function getStaticPaths() {
-  const projects = (await getCollection('projects')).sort(
-    (a, b) => a.data.order - b.data.order,
-  );
+const slug = Astro.params.slug || '';
+const projects = await listProjects({ includeDrafts: Astro.locals.isAdmin });
+const index = projects.findIndex((p) => p.slug === slug);
+const project = index >= 0 ? projects[index] : null;
+const next =
+  project && projects.length > 1
+    ? {
+        slug: projects[(index + 1) % projects.length].slug,
+        title: projects[(index + 1) % projects.length].title,
+      }
+    : undefined;
 
-  return projects.map((project, i) => {
-    const next = projects[(i + 1) % projects.length];
-    return {
-      params: { slug: project.id },
-      props: {
-        project,
-        next: next.id === project.id ? undefined : { id: next.id, title: next.data.title },
-      },
-    };
-  });
+if (!project) {
+  Astro.response.status = 404;
 }
-
-interface Props {
-  project: CollectionEntry<'projects'>;
-  next?: { id: string; title: string };
-}
-
-const { project, next } = Astro.props;
 ---
 
-<ProjectDetail project={project} next={next} locale="id" />
+{
+  project ? (
+    <ProjectDetail
+      project={project}
+      next={next}
+      index={index + 1}
+      total={projects.length}
+      locale="id"
+    />
+  ) : (
+    <NotFound locale="id" />
+  )
+}

@@ -1,6 +1,7 @@
 ---
-import { getCollection } from 'astro:content';
 import Page from '../layouts/Page.astro';
+import { estimateReadingTime } from '../lib/cms/markdown';
+import { listPosts } from '../lib/cms/repository';
 import { t, localePath, type Locale } from '../i18n';
 
 interface Props {
@@ -8,29 +9,37 @@ interface Props {
 }
 const { locale } = Astro.props;
 const tr = t(locale);
+const isId = locale === 'id';
 
-const posts = (
-  await getCollection('posts', (entry) => entry.data.lang === locale)
-).sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+const posts = await listPosts({ lang: locale, includeDrafts: false });
 
-const readingTime = (body: string | undefined) =>
-  Math.max(1, Math.round((body ?? '').split(/\s+/).length / 220));
-const formatDate = (date: Date, loc: Locale) =>
-  new Intl.DateTimeFormat(loc === 'id' ? 'id-ID' : 'en-GB', {
+const formatDate = (dateStr: string, loc: Locale) => {
+  const date = new Date(dateStr);
+  return new Intl.DateTimeFormat(loc === 'id' ? 'id-ID' : 'en-GB', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
-  }).format(date);
+  }).format(Number.isNaN(date.getTime()) ? new Date() : date);
+};
 ---
 
 <Page title={tr['blog.title']} description={tr['blog.lede']}>
-  <div class="mx-auto max-w-[1440px] px-5 py-20 sm:px-10 lg:px-16 lg:py-28">
-    <header class="max-w-2xl">
-      <span class="label">{tr['blog.index']}</span>
-      <h1 class="display mt-4 text-[2.75rem] sm:text-[4rem]">
-        {tr['blog.title']}
-      </h1>
-      <p class="mt-6 text-base leading-relaxed text-subtle md:text-lg">{tr['blog.lede']}</p>
+  <div data-cms-section="blog" class="mx-auto max-w-[1440px] px-5 py-20 sm:px-10 lg:px-16 lg:py-28">
+    <header class="flex flex-wrap items-end justify-between gap-6">
+      <div class="max-w-2xl">
+        <span class="label">{tr['blog.index']}</span>
+        <h1 class="display mt-4 text-[2.75rem] sm:text-[4rem]">
+          {tr['blog.title']}
+        </h1>
+        <p class="mt-6 text-base leading-relaxed text-subtle md:text-lg">{tr['blog.lede']}</p>
+      </div>
+      {
+        Astro.locals.isAdmin && (
+          <a href="/admin?tab=blog&new=1" class="btn btn--solid h-10 px-5 text-[0.625rem]">
+            + {isId ? 'TULIS ARTIKEL BARU' : 'NEW POST'}
+          </a>
+        )
+      }
     </header>
 
     {
@@ -41,25 +50,25 @@ const formatDate = (date: Date, loc: Locale) =>
           {posts.map((post) => (
             <article>
               <a
-                href={localePath(locale, `/blog/${post.id}`)}
+                href={localePath(locale, `/blog/${post.slug}`)}
                 class="group flex flex-col gap-4 py-8 transition-colors duration-200 hover:bg-[color:var(--hover)] sm:flex-row sm:items-baseline sm:gap-10 sm:px-4"
               >
                 <div class="flex shrink-0 items-center gap-3 font-mono text-xs text-subtle">
-                  <time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate, locale)}</time>
+                  <time datetime={post.pubDate}>{formatDate(post.pubDate, locale)}</time>
                   <span aria-hidden="true">·</span>
-                  <span>{readingTime(post.body) + ' ' + tr['blog.minRead']}</span>
+                  <span>{estimateReadingTime(post.bodyMarkdown) + ' ' + tr['blog.minRead']}</span>
                 </div>
 
                 <div class="flex-1">
                   <h2 class="display text-[1.75rem] transition-opacity group-hover:opacity-70 sm:text-[2.25rem]">
-                    {post.data.title}
+                    {post.title}
                   </h2>
                   <p class="mt-3 text-sm leading-relaxed text-subtle md:text-base">
-                    {post.data.description}
+                    {post.description}
                   </p>
-                  {post.data.tags.length > 0 && (
+                  {post.tags.length > 0 && (
                     <ul class="mt-4 flex flex-wrap gap-1.5">
-                      {post.data.tags.map((tag) => (
+                      {post.tags.map((tag) => (
                         <li class="tag">{tag}</li>
                       ))}
                     </ul>

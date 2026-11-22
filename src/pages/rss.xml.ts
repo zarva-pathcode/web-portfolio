@@ -1,22 +1,22 @@
 import rss from '@astrojs/rss';
-import { getCollection } from 'astro:content';
-import { site } from '../data/site';
+import { getSection, listPosts } from '../lib/cms/repository';
 
 export async function GET(context: { site: URL }) {
-  const posts = (await getCollection('posts', (entry) => entry.data.lang === 'en')).sort(
-    (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
-  );
+  const [settings, posts] = await Promise.all([
+    getSection('settings'),
+    listPosts({ lang: 'en', includeDrafts: false }),
+  ]);
 
   return rss({
-    title: `${site.brand} — ${site.name}`,
-    description: site.description,
+    title: `${settings.brand} | ${settings.name}`,
+    description: settings.description.en,
     site: context.site,
     items: posts.map((post) => ({
-      title: post.data.title,
-      description: post.data.description,
-      pubDate: post.data.pubDate,
-      link: `/blog/${post.id}`,
-      categories: post.data.tags,
+      title: post.title,
+      description: post.description,
+      pubDate: new Date(post.pubDate),
+      link: `/blog/${post.slug}`,
+      categories: post.tags,
     })),
   });
 }

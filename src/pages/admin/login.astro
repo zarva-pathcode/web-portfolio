@@ -1,0 +1,124 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getAdminEmail } from '../../lib/cms/auth';
+import { getSection } from '../../lib/cms/repository';
+
+if (Astro.locals.isAdmin) {
+  return Astro.redirect('/admin', 302);
+}
+
+const settings = await getSection('settings');
+const defaultEmail = getAdminEmail();
+---
+
+<Base title={`Admin Login — ${settings.brand}`} description="Zarvaism CMS Authentication">
+  <main class="flex min-h-dvh items-center justify-center bg-canvas px-5 py-12 text-ink">
+    <div class="w-full max-w-[440px] border border-[color:var(--hairline)] bg-[color:var(--surface)]/55 p-7 sm:p-10">
+      <div class="flex items-center justify-between border-b border-[color:var(--hairline)] pb-5">
+        <a href="/" class="label transition-colors hover:text-brand">← BACK TO SITE</a>
+        <button
+          type="button"
+          id="login-theme-btn"
+          class="label cursor-pointer transition-colors hover:text-brand"
+        >
+          THEME
+        </button>
+      </div>
+
+      <p class="label mt-8 text-brand">CMS · {settings.brand}</p>
+      <h1 class="display mt-2 text-[2.5rem] leading-none">Studio Admin.</h1>
+      <p class="mt-3 text-sm leading-relaxed text-subtle">
+        Masuk untuk mengelola konten section beranda, pengalaman, studi kasus, media, dan artikel blog secara langsung.
+      </p>
+
+      <form id="admin-login-form" class="mt-8 space-y-5">
+        <div>
+          <label for="email" class="label mb-2 block">Email Admin</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            autocomplete="email"
+            value={defaultEmail}
+            class="w-full border border-[color:var(--hairline)] bg-canvas px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:border-brand"
+          />
+        </div>
+
+        <div>
+          <label for="password" class="label mb-2 block">Password</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            required
+            autocomplete="current-password"
+            placeholder="••••••••••••"
+            class="w-full border border-[color:var(--hairline)] bg-canvas px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:border-brand"
+          />
+        </div>
+
+        <p id="login-error" class="hidden border border-brand/40 bg-brand/10 px-3 py-2 font-mono text-xs text-brand"></p>
+
+        <button
+          type="submit"
+          id="login-submit"
+          class="btn btn--solid w-full cursor-pointer justify-center py-3"
+        >
+          MASUK KE DASHBOARD →
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <script is:inline>
+    (function () {
+      var themeBtn = document.getElementById('login-theme-btn');
+      if (themeBtn) {
+        themeBtn.addEventListener('click', function () {
+          var next = document.documentElement.dataset.theme === 'night' ? 'paper' : 'night';
+          document.documentElement.dataset.theme = next;
+          try { localStorage.setItem('theme', next); } catch (e) {}
+        });
+      }
+
+      var form = document.getElementById('admin-login-form');
+      var errEl = document.getElementById('login-error');
+      var submitBtn = document.getElementById('login-submit');
+      if (!form) return;
+
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        if (errEl) {
+          errEl.classList.add('hidden');
+          errEl.textContent = '';
+        }
+        if (submitBtn) submitBtn.disabled = true;
+
+        try {
+          var fd = new FormData(form);
+          var res = await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: String(fd.get('email') || ''),
+              password: String(fd.get('password') || ''),
+            }),
+          });
+          var data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.error || 'Login gagal');
+          }
+          window.location.href = '/admin';
+        } catch (err) {
+          if (errEl) {
+            errEl.textContent = err instanceof Error ? err.message : 'Login gagal';
+            errEl.classList.remove('hidden');
+          }
+        } finally {
+          if (submitBtn) submitBtn.disabled = false;
+        }
+      });
+    })();
+  </script>
+</Base>

@@ -5,6 +5,9 @@ import SiteRail from '../components/SiteRail.astro';
 import NavMenu from '../components/NavMenu.astro';
 import BackToTop from '../components/BackToTop.astro';
 import ShellFooter from '../components/ShellFooter.astro';
+import QuickEditOverlay from '../components/admin/QuickEditOverlay.astro';
+import { getSection } from '../lib/cms/repository';
+import type { HeroSectionData, SettingsSectionData } from '../lib/cms/validators';
 import { localeFromPath, type Locale } from '../i18n';
 
 interface Props {
@@ -13,9 +16,19 @@ interface Props {
   image?: string;
   article?: boolean;
   alternates?: Partial<Record<Locale, string>>;
+  settings?: SettingsSectionData;
+  hero?: HeroSectionData;
 }
 
 const locale: Locale = localeFromPath(Astro.url.pathname);
+const settings = Astro.props.settings ?? (await getSection('settings'));
+const hero = Astro.props.hero ?? (await getSection('hero'));
+
+if (!Astro.locals.isAdmin) {
+  Astro.response.headers.set('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=30');
+} else {
+  Astro.response.headers.set('Cache-Control', 'no-store, private');
+}
 ---
 
 <Base {...Astro.props}>
@@ -26,9 +39,10 @@ const locale: Locale = localeFromPath(Astro.url.pathname);
   >
     Skip to content
   </a>
-  <SiteRail locale={locale} />
-  <NavMenu locale={locale} />
+  <SiteRail locale={locale} settings={settings} hero={hero} />
+  <NavMenu locale={locale} settings={settings} hero={hero} />
   <BackToTop />
+  {Astro.locals.isAdmin && <QuickEditOverlay locale={locale} />}
   <div id="pointer-badge" class="pointer-badge" aria-hidden="true">
     <span data-badge-text>OPEN CASE →</span>
   </div>
@@ -40,7 +54,7 @@ const locale: Locale = localeFromPath(Astro.url.pathname);
     <main id="main" class="bg-canvas text-ink">
       <slot />
     </main>
-    <ShellFooter locale={locale} />
+    <ShellFooter locale={locale} settings={settings} />
   </div>
 </Base>
 

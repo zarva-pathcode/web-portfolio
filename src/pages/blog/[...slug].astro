@@ -1,23 +1,17 @@
 ---
-import { getCollection, type CollectionEntry } from 'astro:content';
 import BlogPost from '../../views/BlogPost.astro';
+import NotFound from '../../views/NotFound.astro';
+import { getPostBySlug } from '../../lib/cms/repository';
 
-export async function getStaticPaths() {
-  const posts = (await getCollection('posts', (entry) => entry.data.lang === 'en')).sort(
-    (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
-  );
+const slug = Astro.params.slug || '';
+const post = await getPostBySlug(slug, {
+  lang: 'en',
+  includeDrafts: Astro.locals.isAdmin,
+});
 
-  return posts.map((post) => ({
-    params: { slug: post.id },
-    props: { post },
-  }));
+if (!post) {
+  Astro.response.status = 404;
 }
-
-interface Props {
-  post: CollectionEntry<'posts'>;
-}
-
-const { post } = Astro.props;
 ---
 
-<BlogPost post={post} locale="en" />
+{post ? <BlogPost post={post} locale="en" /> : <NotFound locale="en" />}

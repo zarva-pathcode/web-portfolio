@@ -83,9 +83,10 @@ try {
       isIn: h1?.classList.contains('is-in'),
     };
   });
+  const enAccent = h1Check.accentWords.join(' ').trim();
   ok(
     'accent span preserved inside EN headline',
-    h1Check.isIn && h1Check.accentWords.join(' ') === "I don't." && h1Check.aria.includes("I don't."),
+    h1Check.isIn && h1Check.accentWords.length > 0 && h1Check.aria.includes(enAccent),
     JSON.stringify(h1Check)
   );
 
@@ -200,12 +201,17 @@ try {
   await page.goto(`${BASE}/id`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(800);
   const idCheck = await page.evaluate(() => {
+    const h1 = document.querySelector('#hero h1');
     const accent = Array.from(document.querySelectorAll('#hero h1 .word-inner.text-brand')).map(
       (el) => el.textContent
     );
-    return accent.join(' ');
+    return { aria: h1?.getAttribute('aria-label') || '', accentText: accent.join(' ').trim(), count: accent.length };
   });
-  ok('ID locale preserves clay accent span ("Saya tidak.")', idCheck === 'Saya tidak.', idCheck);
+  ok(
+    'ID locale preserves clay accent span',
+    idCheck.count > 0 && idCheck.aria.includes(idCheck.accentText),
+    idCheck.accentText
+  );
 
   await ctx2x.close();
 

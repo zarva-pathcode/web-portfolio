@@ -1,20 +1,25 @@
 ---
-import { site, social } from '../data/site';
+import { getDefaultSection } from '../lib/cms/defaults';
+import type { SettingsSectionData } from '../lib/cms/validators';
 import { localePath, type Locale } from '../i18n';
 import Ticker from './Ticker.astro';
 
 interface Props {
   locale: Locale;
+  settings?: SettingsSectionData;
 }
-const { locale } = Astro.props;
+const { locale, settings = getDefaultSection('settings') } = Astro.props;
 const isId = locale === 'id';
 const homeBase = localePath(locale, '/');
 
-const motto = isId ? 'Ubah kekacauan jadi ketertiban' : 'Turn chaos into order';
+const mottoTicker = settings.footer.tickerMotto[locale];
 ---
 
-<footer id="contact" class="relative overflow-hidden border-t border-[color:var(--hairline)] bg-canvas text-ink">
-  <!-- Halftone dot fire: crisp dots sized by heat, echoing the hero halftone -->
+<footer
+  id="contact"
+  data-cms-section="settings"
+  class="relative overflow-hidden border-t border-[color:var(--hairline)] bg-canvas text-ink"
+>
   <div
     data-footer-ambient
     aria-hidden="true"
@@ -24,23 +29,22 @@ const motto = isId ? 'Ubah kekacauan jadi ketertiban' : 'Turn chaos into order';
   </div>
 
   <div class="relative z-10">
-    <Ticker items={[motto, motto, motto]} speed={58} />
+    <Ticker items={[mottoTicker, mottoTicker, mottoTicker]} speed={58} />
   </div>
 
   <div class="relative z-10 mx-auto max-w-[1440px] px-5 pt-16 sm:px-10 lg:px-16">
-    <!-- contact block -->
     <div class="grid gap-12 py-16 md:grid-cols-[1.5fr_1fr]">
       <div>
         <p class="label mb-6" data-scramble="view">{isId ? 'Kontak' : 'Contact'}</p>
 
         <button
           type="button"
-          data-copy-email={site.email}
+          data-copy-email={settings.email}
           class="group block text-left"
-          aria-label={isId ? `Salin email ${site.email}` : `Copy email ${site.email}`}
+          aria-label={isId ? `Salin email ${settings.email}` : `Copy email ${settings.email}`}
         >
           <span class="display block text-[1.9rem] leading-tight text-brand-ink underline decoration-1 underline-offset-8 transition-colors group-hover:text-brand sm:text-[2.75rem]">
-            {site.email}
+            {settings.email}
           </span>
           <span class="mt-4 inline-flex items-center gap-3">
             <span
@@ -52,13 +56,13 @@ const motto = isId ? 'Ubah kekacauan jadi ketertiban' : 'Turn chaos into order';
               {isId ? 'KLIK UNTUK SALIN' : 'CLICK TO COPY'}
             </span>
             <span class="label">
-              {isId ? 'DIBALAS DALAM 24 JAM · WIB (GMT+7)' : 'REPLIES WITHIN 24 HOURS · WIB (GMT+7)'}
+              {settings.footer.replyNote[locale]}
             </span>
           </span>
         </button>
 
         <div class="mt-8 flex flex-wrap gap-3">
-          <a href={`mailto:${site.email}`} data-magnetic class="btn btn--solid btn-roll">
+          <a href={`mailto:${settings.email}`} data-magnetic class="btn btn--solid btn-roll">
             <span class="btn-roll__track">
               <span class="btn-roll__text">{isId ? 'KIRIM EMAIL' : 'SEND EMAIL'}</span>
               <span class="btn-roll__text btn-roll__text--clone" aria-hidden="true">
@@ -82,7 +86,7 @@ const motto = isId ? 'Ubah kekacauan jadi ketertiban' : 'Turn chaos into order';
           <p class="label mb-4">{isId ? 'TAUTAN' : 'ELSEWHERE'}</p>
           <ul class="space-y-2">
             {
-              social.map((s) => (
+              settings.social.map((s) => (
                 <li>
                   <a
                     href={s.href}
@@ -142,16 +146,14 @@ const motto = isId ? 'Ubah kekacauan jadi ketertiban' : 'Turn chaos into order';
       </div>
     </div>
 
-    <!-- motto -->
     <p class="display max-w-[22rem] pb-10 text-[1.5rem] leading-[1.15] text-subtle">
-      {isId ? 'Jadilah gelap dalam terang, terang dalam kegelapan.' : 'Be dark in the light, be light in the dark.'}
+      {settings.footer.motto[locale]}
     </p>
   </div>
 
-  <!-- oversized wordmark, cropped by the floor -->
   <div aria-hidden="true" class="relative z-10 select-none overflow-hidden">
     <p class="display mx-auto max-w-[1440px] translate-y-[18%] px-5 text-[19vw] leading-[0.75] tracking-[-0.04em] text-[color:color-mix(in_oklab,var(--ink)_9%,var(--canvas))] sm:px-10 lg:px-16">
-      {site.brand}
+      {settings.brand}
     </p>
   </div>
 </footer>

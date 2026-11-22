@@ -1,0 +1,129 @@
+---
+import type { Locale } from '../../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const isId = locale === 'id';
+---
+
+<div id="cms-quick-edit" data-locale={locale} class="no-print">
+  <!-- Admin-only floating Quick Control Capsule -->
+  <div class="fixed right-5 bottom-20 z-[85] flex items-center gap-1.5 rounded-full border border-[color:var(--brand)]/55 bg-[color:var(--scrim)] px-2.5 py-1.5 shadow-lg backdrop-blur-md sm:bottom-6 sm:right-20">
+    <button
+      type="button"
+      data-qe-toggle
+      aria-pressed="false"
+      class="label inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-[0.5625rem] text-ink transition-colors hover:text-brand"
+    >
+      <span data-qe-dot class="size-1.5 rounded-full bg-subtle"></span>
+      <span data-qe-label>{isId ? 'MODE EDIT: OFF' : 'EDIT MODE: OFF'}</span>
+    </button>
+    <span class="h-3.5 w-px bg-[color:var(--hairline)]" aria-hidden="true"></span>
+    <a
+      href="/admin?tab=blog&new=1"
+      class="label rounded-full px-2.5 py-1 text-[0.5625rem] text-subtle transition-colors hover:text-brand"
+    >
+      + BLOG
+    </a>
+    <span class="h-3.5 w-px bg-[color:var(--hairline)]" aria-hidden="true"></span>
+    <a
+      href="/admin"
+      class="label rounded-full bg-brand px-3 py-1 text-[0.5625rem] text-[#f3efe6] transition-opacity hover:opacity-90"
+    >
+      CMS ↗
+    </a>
+  </div>
+
+  <!-- Slide-Over Quick Edit Drawer -->
+  <div data-qe-drawer hidden class="fixed inset-0 z-[92]">
+    <div data-qe-backdrop class="fixed inset-0 bg-[#14110f]/55 backdrop-blur-[2px]"></div>
+    <aside
+      data-lenis-prevent
+      role="dialog"
+      aria-modal="true"
+      aria-label="Quick Section Editor"
+      class="fixed inset-y-0 right-0 z-10 flex w-full max-w-[520px] flex-col border-l border-[color:var(--hairline)] bg-canvas text-ink shadow-2xl"
+    >
+      <div class="flex items-center justify-between border-b border-[color:var(--hairline)] px-6 py-4">
+        <div>
+          <p class="label text-[0.5625rem] text-brand">QUICK EDIT</p>
+          <h2 data-qe-drawer-title class="display text-[1.75rem] leading-tight">Section</h2>
+        </div>
+        <div class="flex items-center gap-3">
+          <a data-qe-full-link href="/admin" class="label text-[0.5625rem] text-brand hover:underline">
+            FULL CMS →
+          </a>
+          <button
+            type="button"
+            data-qe-close
+            class="label cursor-pointer border border-[color:var(--hairline)] px-3 py-1.5 text-[0.5625rem] hover:border-ink"
+          >
+            CLOSE ×
+          </button>
+        </div>
+      </div>
+
+      <div data-qe-body class="flex-1 space-y-4 overflow-y-auto px-6 py-5"></div>
+
+      <div class="flex items-center justify-between gap-3 border-t border-[color:var(--hairline)] px-6 py-4">
+        <span data-qe-status class="font-mono text-xs text-subtle"></span>
+        <div class="flex gap-2">
+          <button
+            type="button"
+            data-qe-close
+            class="btn btn--ghost h-10 cursor-pointer px-4 text-[0.625rem]"
+          >
+            BATAL
+          </button>
+          <button
+            type="button"
+            data-qe-save
+            class="btn btn--solid h-10 cursor-pointer px-5 text-[0.625rem]"
+          >
+            SIMPAN &amp; TERAPKAN
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<style>
+  :global(html.cms-edit-active [data-cms-section]) {
+    position: relative;
+    outline: 1.5px dashed color-mix(in oklab, var(--brand) 65%, transparent);
+    outline-offset: -3px;
+  }
+
+  :global(.qe-section-pill) {
+    position: absolute;
+    top: 14px;
+    right: 18px;
+    z-index: 45;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid var(--brand);
+    background: var(--canvas);
+    color: var(--brand);
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(20, 17, 15, 0.12);
+    transition: background-color 180ms ease, color 180ms ease;
+  }
+
+  :global(.qe-section-pill:hover) {
+    background: var(--brand);
+    color: #f3efe6;
+  }
+</style>
+
+<script>
+  import '../../lib/cms/quickEdit.ts';
+</script>

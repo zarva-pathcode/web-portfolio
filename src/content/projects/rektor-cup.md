@@ -6,7 +6,7 @@ category: UI/UX Design
 platform: Mobile
 panelLabel: rektorcup.ticketing.v2
 lqip: rektor-cup
-summary: High-fidelity mobile design and prototyping for a school futsal tournament, built around a ticket flow that takes one tap.
+summary: Mobile interface design and Figma prototype for a school futsal tournament, cutting ticket purchase down to a single checkout screen.
 cover: '../../assets/project/rektor-cup/Group 57.png'
 coverAlt: Two Rektor Cup mobile screens showing the ticket selection checkout and the digital ticket with QR code
 coverPosition: top
@@ -18,36 +18,30 @@ stack:
   - High-Fidelity Design
   - Interactive Prototyping
   - Mobile UI
-# TODO: replace with real figures
-metrics:
-  - { value: '1', label: 'Screen to purchase' }
-  - { value: 'QR', label: 'Entry credential' }
-  - { value: '2', label: 'Key flows designed' }
+metrics: []
 problem: >-
-  A student futsal tournament draws parents and supporters who are not habitual ticket
-  buyers. The existing flow buried the schedule, forced a multi-step checkout, and left
-  ticket holders uncertain about whether they had actually paid.
+  A student futsal tournament brings in parents and supporters who rarely buy digital
+  tickets. The earlier flow buried match schedules, stretched checkout across multiple
+  screens, and left buyers unsure whether their payment had gone through.
 approach: >-
-  I designed the mobile experience from the schedule outward: match fixtures were made
-  scannable at a glance so people could find their match before deciding on a ticket.
-  Checkout was reduced to a single confirmable screen with quantity steppers and a live
-  total, and payment success resolves straight into a digital ticket carrying a QR code,
-  so the "did it work?" moment is answered immediately. Refunds were designed as a
-  bottom-sheet rather than a separate destination, keeping the user in context.
+  I started the flow from the match schedule so visitors could spot their team first and
+  pick a ticket right away. Checkout fits on one screen with quantity steppers, ticket
+  tiers, and a live total. Once payment succeeds, the app lands directly on a QR digital
+  ticket so buyers get immediate confirmation. Refunds open in a bottom sheet instead of
+  pulling people out of their ticket view.
 result: >-
-  A high-fidelity, fully interactive prototype covering purchase through to QR validation.
-  The ticket purchase flow is short enough to complete in one sitting, and the digital
-  ticket doubles as the entry credential, so validation needs no second app.
+  A clickable Figma prototype covering match selection, single-screen purchase, QR entry
+  pass, and refund requests. Buyers finish checkout in one sitting and show the same
+  screen at the venue gate.
 highlights:
-  - 'Match schedule designed to be scannable at a glance instead of browsed.'
-  - 'Single-screen checkout with quantity steppers, tiered pricing and a live running total.'
-  - 'Payment success resolves directly into a QR-coded digital ticket.'
-  - 'Refund flow designed as a bottom-sheet so the user never loses their place.'
+  - 'Scannable match schedule designed to help parents find a fixture before buying.'
+  - 'Single-screen checkout with quantity steppers, tiered pricing, and a running total.'
+  - 'Immediate redirect from payment confirmation to a QR digital ticket.'
+  - 'Bottom-sheet refund flow that keeps users in context.'
 links: []
 ---
 
-The constraint that shaped this whole project was that the users were students'
-parents â€” people who had never bought a digital ticket before. Every extra step was
-a place they would drop out, so the design kept shaving screens off until the purchase
-and the proof of purchase happened in one continuous motion.
-
+The main constraint on this project was the audience: parents who had never bought a
+digital tournament ticket before. Every extra step increased drop-off, so I kept cutting
+screens until choosing a match, paying, and receiving the QR pass felt like one short
+sequence.

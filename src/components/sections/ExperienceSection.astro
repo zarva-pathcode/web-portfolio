@@ -1,26 +1,31 @@
 ---
-import { getCollection } from 'astro:content';
+import { listExperiences, type ExperienceRecord } from '../../lib/cms/repository';
 import type { Locale } from '../../i18n';
 
 interface Props {
   locale: Locale;
+  experiences?: ExperienceRecord[];
 }
-const { locale } = Astro.props;
+const { locale, experiences } = Astro.props;
 const isId = locale === 'id';
 
-const entries = (await getCollection('experiences')).sort((a, b) => a.data.order - b.data.order);
+const entries = experiences ?? (await listExperiences());
 const labels = {
   exp: isId ? 'PENGALAMAN' : 'EXPERIENCE',
-  title: isId ? 'Perjalanan & pengalaman.' : 'Journey & experience.',
+  title: isId ? 'Pengalaman kerja.' : 'Work experience.',
 };
 ---
 
-<section id="experience" class="border-t border-[color:var(--hairline)] bg-canvas text-ink">
+<section
+  id="experience"
+  data-cms-section="experiences"
+  class="border-t border-[color:var(--hairline)] bg-canvas text-ink"
+>
   <div class="mx-auto max-w-[1440px] px-5 py-20 sm:px-10 lg:px-16 lg:py-28">
     <div class="mb-16 flex flex-wrap items-end justify-between gap-4">
       <div>
         <p class="label mb-8">
-          <span class="text-brand">04</span> — <span data-scramble="view">{labels.exp}</span>
+          <span class="text-brand">04</span> · <span data-scramble="view">{labels.exp}</span>
         </p>
         <h2 class="display text-[2.25rem] sm:text-[3.25rem]" data-reveal="press" data-split>
           {labels.title}
@@ -31,7 +36,6 @@ const labels = {
       </p>
     </div>
 
-    <!-- Intact career spine: highlight stays permanently anchored on the latest active role -->
     <div class="exp-timeline relative" data-exp-list>
       <div
         data-exp-spine
@@ -44,9 +48,8 @@ const labels = {
 
       <ol class="space-y-6 sm:space-y-8">
         {
-          entries.map((entry, i) => {
-            const d = entry.data;
-            const yearLabel = d.period.split('—')[0].trim().split(' ').slice(-1)[0];
+          entries.map((d, i) => {
+            const yearLabel = d.period.split(/[—–-]/)[0].trim().split(' ').slice(-1)[0];
             const isCurrent = i === 0;
             const panelId = `exp-impact-${i}`;
             return (
@@ -57,7 +60,6 @@ const labels = {
                   isCurrent && 'is-current',
                 ]}
               >
-                <!-- Desktop Col 1: Year right-aligned left of spine -->
                 <div class="hidden pr-4 pt-6 text-right sm:block">
                   <span
                     data-exp-year
@@ -70,7 +72,6 @@ const labels = {
                   </span>
                 </div>
 
-                <!-- Col 2: Centered milestone dot directly on vertical spine -->
                 <div class="relative z-10 flex justify-center pt-[1.85rem]">
                   <span
                     data-exp-dot
@@ -82,7 +83,6 @@ const labels = {
                   />
                 </div>
 
-                <!-- Col 3: Click-anywhere interactive card (transition-colors only so GSAP owns transform/opacity cleanly) -->
                 <div
                   data-exp-card
                   class="exp-card ml-3 cursor-pointer border border-[color:var(--hairline)] bg-[color:var(--surface)]/45 p-5 transition-colors duration-200 hover:border-[color:var(--brand)]/55 hover:bg-[color:var(--surface)]/80 sm:ml-4 sm:p-7"
@@ -136,7 +136,7 @@ const labels = {
                         <ul class="mt-4 space-y-2.5 border-t border-[color:var(--hairline)] pt-4">
                           {d.points.map((pt) => (
                             <li data-exp-point class="flex gap-3 text-[0.8125rem] leading-relaxed text-subtle">
-                              <span class="text-brand" aria-hidden="true">—</span>
+                              <span class="text-brand" aria-hidden="true">-</span>
                               <span>{pt}</span>
                             </li>
                           ))}

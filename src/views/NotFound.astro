@@ -12,23 +12,23 @@ const copy = isId
   ? {
       label: 'HALAMAN TIDAK DITEMUKAN',
       title: 'Halaman ini tidak ada.',
-      body: 'Mungkin sudah dipindah, atau tautannya salah ketik. Yang penting bukan 404-nya, tapi ke mana kamu pergi setelah ini.',
+      body: 'Halaman ini mungkin sudah dipindahkan, atau alamat URL-nya salah ketik.',
       cta: 'Kembali ke beranda',
-      work: 'Lihat karya',
+      work: 'Lihat karya pilihan',
     }
   : {
       label: 'PAGE NOT FOUND',
       title: 'This page does not exist.',
-      body: 'It may have moved, or the link was mistyped. What matters is not the 404 — it is where you go next.',
+      body: 'The page may have moved, or the URL has a typo.',
       cta: 'Back to home',
-      work: 'See the work',
+      work: 'See selected work',
     };
 ---
 
-<Page title={`404 — ${copy.title}`} description={copy.body}>
+<Page title={`404 | ${copy.title}`} description={copy.body}>
   <div class="bg-canvas text-ink">
     <div class="mx-auto flex min-h-[78svh] max-w-[1440px] flex-col justify-center px-5 py-24 sm:px-10 lg:px-16">
-      <p class="label mb-10"><span class="text-brand">404</span> — {copy.label}</p>
+      <p class="label mb-10"><span class="text-brand">404</span> · {copy.label}</p>
 
       <h1 class="display max-w-[46rem] text-[2.75rem] leading-[0.98] sm:text-[4.5rem]">
         {copy.title}

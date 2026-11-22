@@ -1,32 +1,41 @@
 ---
-import { aboutContent, disciplines } from '../../data/site';
+import { getDefaultSection } from '../../lib/cms/defaults';
+import type { AboutSectionData } from '../../lib/cms/validators';
 import { localePath, type Locale } from '../../i18n';
 
 interface Props {
   locale: Locale;
+  about?: AboutSectionData;
 }
-const { locale } = Astro.props;
+const { locale, about = getDefaultSection('about') } = Astro.props;
 const isId = locale === 'id';
-const copy = aboutContent[locale];
+const statement = about.statement[locale];
+const body = about.body[locale];
+const meta = about.meta[locale];
+const disciplines = about.disciplines;
 const homeBase = localePath(locale, '/');
 ---
 
-<section id="about" class="border-t border-[color:var(--hairline)] bg-canvas text-ink">
+<section
+  id="about"
+  data-cms-section="about"
+  class="border-t border-[color:var(--hairline)] bg-canvas text-ink"
+>
   <div class="mx-auto max-w-[1440px] px-5 py-20 sm:px-10 lg:px-16 lg:py-28">
     <p class="label mb-12">
-      <span class="text-brand">02</span> — <span data-scramble="view">{isId ? 'TENTANG' : 'ABOUT'}</span>
+      <span class="text-brand">02</span> · <span data-scramble="view">{isId ? 'TENTANG' : 'ABOUT'}</span>
     </p>
 
     <div class="grid gap-12 lg:grid-cols-[1.15fr_1fr]">
       <h2 class="display text-[2.25rem] sm:text-[3.25rem] lg:text-[4rem]" data-reveal="press" data-split>
-        {copy.statement}
+        {statement}
       </h2>
 
       <div data-reveal="ink">
-        <p class="max-w-[34rem] text-base leading-relaxed text-subtle">{copy.body}</p>
+        <p class="max-w-[34rem] text-base leading-relaxed text-subtle">{body}</p>
         <dl class="mt-8 space-y-2 border-t border-[color:var(--hairline)] pt-6">
           {
-            copy.meta.map(([k, v]) => (
+            meta.map(([k, v]) => (
               <div class="flex gap-6">
                 <dt class="label w-28 shrink-0">{k}</dt>
                 <dd class="label text-ink">{v}</dd>
@@ -37,7 +46,6 @@ const homeBase = localePath(locale, '/');
       </div>
     </div>
 
-    <!-- 3 Interactive Editorial Bento Cards with live looping vector micro-diagrams -->
     <ul class="mt-16 grid grid-cols-1 gap-5 md:grid-cols-3" data-stagger>
       {
         disciplines.map((d, idx) => (
@@ -57,15 +65,13 @@ const homeBase = localePath(locale, '/');
                   </span>
                 </div>
 
-                <!-- Live looping vector micro-diagram (paused offscreen & under reduced-motion) -->
                 <div
                   data-bento-diagram
                   class="bento-diagram mb-7 flex h-28 items-center justify-center overflow-hidden border border-[color:var(--hairline)] bg-canvas/70 px-4"
                   aria-hidden="true"
                 >
-                  {idx === 0 && (
+                  {idx % 3 === 0 && (
                     <svg viewBox="0 0 220 92" class="bento-svg h-20 w-full text-ink" fill="none">
-                      <!-- 01 Mobile: Flutter phone + live BLoC event/state bus -->
                       <rect x="24" y="10" width="44" height="72" rx="6" stroke="currentColor" stroke-opacity="0.35" stroke-width="1.2" />
                       <line x1="40" y1="16" x2="52" y2="16" stroke="currentColor" stroke-opacity="0.35" stroke-width="1.2" stroke-linecap="round" />
                       <rect class="bento-flow-a" x="31" y="25" width="30" height="16" rx="2" fill="var(--brand)" fill-opacity="0.22" stroke="var(--brand)" stroke-width="1.1" />
@@ -80,9 +86,8 @@ const homeBase = localePath(locale, '/');
                       <rect x="126" y="56" width="46" height="5" rx="1" fill="currentColor" fill-opacity="0.26" />
                     </svg>
                   )}
-                  {idx === 1 && (
+                  {idx % 3 === 1 && (
                     <svg viewBox="0 0 220 92" class="bento-svg h-20 w-full text-ink" fill="none">
-                      <!-- 02 Systems: Live modular grid & pulsing design token -->
                       <line x1="20" y1="20" x2="200" y2="20" stroke="currentColor" stroke-opacity="0.12" />
                       <line x1="20" y1="46" x2="200" y2="46" stroke="currentColor" stroke-opacity="0.12" />
                       <line x1="20" y1="72" x2="200" y2="72" stroke="currentColor" stroke-opacity="0.12" />
@@ -94,9 +99,8 @@ const homeBase = localePath(locale, '/');
                       <rect class="bento-grid-b" x="146" y="50" width="46" height="26" rx="2" fill="currentColor" fill-opacity="0.1" stroke="currentColor" stroke-opacity="0.3" stroke-width="1.1" />
                     </svg>
                   )}
-                  {idx === 2 && (
+                  {idx % 3 === 2 && (
                     <svg viewBox="0 0 220 92" class="bento-svg h-20 w-full text-ink" fill="none">
-                      <!-- 03 Engineering: Browser live component render & code module -->
                       <rect x="26" y="14" width="116" height="64" rx="3" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.2" />
                       <line x1="26" y1="26" x2="142" y2="26" stroke="currentColor" stroke-opacity="0.2" />
                       <circle cx="34" cy="20" r="1.8" fill="var(--brand)" />

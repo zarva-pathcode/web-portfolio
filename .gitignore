@@ -34,3 +34,8 @@ tmp-refshots/
 
 # brainstorm visual companion sessions
 .superpowers/
+
+# local CMS SQLite database & dev media uploads
+.data/
+public/uploads/
+

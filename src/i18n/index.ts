@@ -3,9 +3,9 @@ export type Locale = (typeof locales)[number];
 export const defaultLocale: Locale = 'en';
 
 const en = {
-  'meta.siteTitle': 'Zarvaism — Bintang Fadilah Ramadhan, Mobile & Frontend Developer',
+  'meta.siteTitle': 'Zarvaism | Bintang Fadilah Ramadhan, Mobile & Frontend Developer',
   'meta.description':
-    'Mobile and Frontend Developer working with Flutter, React and TypeScript. Building production apps with Clean Architecture, BLoC and AI integration.',
+    'Mobile and Frontend Developer working with Flutter, React, and TypeScript. Building production apps with Clean Architecture, BLoC state management, and REST APIs.',
 
   'nav.menu': 'Menu',
   'nav.skip': 'Skip to content',
@@ -13,55 +13,51 @@ const en = {
   'nav.contrastOn': 'Turn off high contrast',
   'nav.contrastOff': 'Turn on high contrast',
 
-  'hero.headline': 'Most apps stop when code works.',
-  'hero.headlineAccent': "I don't.",
+  'hero.headline': 'I build mobile and web apps',
+  'hero.headlineAccent': 'built to last.',
   'hero.sub':
-    'Mobile & frontend engineer building Flutter and React products — from clean architecture to the last pixel of motion.',
-  'hero.ctaPrimary': 'Explore Work',
-  'hero.ctaSecondary': 'Get in touch',
+    'Flutter and React developer based in Purwokerto. I design interfaces in Figma, structure code with BLoC or TypeScript, and ship apps to production.',
+  'hero.ctaPrimary': 'See Selected Work',
+  'hero.ctaSecondary': 'Email Me',
 
   'about.index': 'About',
-  'about.title': 'Passionate about crafting visuals that speak through design.',
+  'about.title': 'Mobile and frontend engineering with a design background.',
   'about.body':
-    'Hi, I’m Bintang Fadilah Ramadhan. I enjoy turning complex ideas into quiet, intuitive interactive experiences — balancing meticulous visual craft with robust functional logic.',
+    'Hi, I am Bintang Fadilah Ramadhan. I design interfaces in Figma and implement them in Flutter and React, keeping the codebase structured for the next team.',
   'about.body2':
-    'For me, coding is not just about writing lines of code, but about solving problems and creating apps that people genuinely enjoy using. Every pixel and micro-interaction is engineered with restraint and purpose.',
-  'about.subhead': 'Creative Technologist',
-  'about.subtitle': 'Turning ideas into interactive experiences.',
+    'Most of my work sits between UI design and client architecture: state management, API integration, and responsive layouts that hold up in daily use.',
+  'about.subhead': 'Mobile & Frontend Developer',
+  'about.subtitle': 'From Figma layouts to production builds.',
   'about.subbody':
-    'Paying attention to both the visual details and the structural logic behind them. Clean architecture meets human-centered aesthetics.',
+    'Clear component structure, predictable BLoC or TypeScript state, and interfaces that stay readable on real devices.',
   'about.focus': 'Flutter & React',
-  'about.status': 'Open to opportunities',
+  'about.status': 'Open for freelance',
 
-  'disciplines.eyebrow': 'Services & Craft',
-  'disciplines.title': 'What I Do',
-  'disciplines.lede':
-    'Turning complex ideas into functional digital products. Here is how I can help you.',
+  'disciplines.eyebrow': 'Services',
+  'disciplines.title': 'What I Build',
+  'disciplines.lede': 'Mobile apps, web interfaces, and Figma systems ready for implementation.',
 
-  'experience.eyebrow': 'Career Timeline & Trajectory',
+  'experience.eyebrow': 'Career Timeline',
   'experience.title': 'Work Experience',
-  'experience.lede':
-    'A chronology of production engineering, design systems and product delivery.',
+  'experience.lede': 'Roles across mobile engineering, frontend revamps, and teaching.',
   'experience.stepOf': 'Step {current} of {total}',
 
-  'projects.eyebrow': 'Selected Works & Case Studies',
+  'projects.eyebrow': 'Selected Case Studies',
   'projects.title': 'Featured Projects.',
-  'projects.lede':
-    'A curation of digital products engineered with typographic clarity, cross-platform architecture, and fluid human-centric interactions.',
-  'projects.viewCase': 'View Case Study',
+  'projects.lede': 'Three projects covering mobile engineering, tournament ticketing UI, and web architecture.',
+  'projects.viewCase': 'Read Case Study',
   'projects.problem': 'The problem',
   'projects.approach': 'The approach',
   'projects.result': 'The result',
-  'projects.highlights': 'What it took',
+  'projects.highlights': 'Key work',
   'projects.gallery': 'In the app',
   'projects.stack': 'Stack',
   'projects.next': 'Next project',
   'projects.back': 'Back to home',
 
-  'archive.eyebrow': 'Archive & Experiments',
+  'archive.eyebrow': 'Archive',
   'archive.title': 'Other Projects.',
-  'archive.lede':
-    'A catalog of secondary ventures, open-source modules, exploratory UI experiments, and micro-tools.',
+  'archive.lede': 'Additional client platforms, mobile releases, and academic or HKI-registered builds.',
   'archive.colYear': 'Year',
   'archive.colProject': 'Project',
   'archive.colCategory': 'Category',
@@ -69,34 +65,33 @@ const en = {
   'archive.colArtifact': 'Artifact',
 
   'contact.index': 'Contact',
-  'contact.title': "Let's work together",
-  'contact.lede':
-    'Got a role, a project, or just a question about how something was built? My inbox is open.',
+  'contact.title': 'Work together',
+  'contact.lede': 'Have a freelance scope, a role, or a question about one of these builds? Send an email.',
   'contact.name': 'Name',
-  'contact.nameHint': 'The name you would like to be addressed by.',
+  'contact.nameHint': 'The name you would like me to use.',
   'contact.email': 'Email',
-  'contact.emailHint': 'A working email address, so I can reply to you.',
+  'contact.emailHint': 'A working email address so I can reply.',
   'contact.message': 'Message',
-  'contact.messageHint': 'A few lines about the role, the project, or the question.',
+  'contact.messageHint': 'A few lines about the project, role, or question.',
   'contact.send': 'Send message',
-  'contact.sending': 'Sending…',
-  'contact.success': 'Message sent. Thanks — I will get back to you shortly.',
+  'contact.sending': 'Sending...',
+  'contact.success': 'Message sent. Thanks, I will reply shortly.',
   'contact.error': 'Something went wrong. Please try again or email me directly.',
 
-  'footer.tagline': "Let's work together",
+  'footer.tagline': 'Work together',
   'footer.rights': 'All rights reserved',
   'footer.builtWith': 'Built with',
 
   'blog.index': 'Writing',
-  'blog.title': 'Notes from the build',
-  'blog.lede': 'Occasional writing on mobile engineering, UI/UX and the tools in between.',
+  'blog.title': 'Build notes',
+  'blog.lede': 'Notes on Flutter, frontend architecture, and the decisions behind my projects.',
   'blog.minRead': 'min read',
-  'blog.empty': 'No posts yet — check back soon.',
+  'blog.empty': 'No posts yet. Check back soon.',
   'blog.back': 'All posts',
   'blog.published': 'Published',
 
   'cv.title': 'Curriculum Vitae',
-  'cv.lede': 'A printable, single-page version of my resume.',
+  'cv.lede': 'A printable single-page summary of my work and education.',
   'cv.print': 'Print / Save as PDF',
   'cv.summary': 'Summary',
   'cv.education': 'Education',
@@ -108,16 +103,16 @@ const en = {
 
   'common.back': 'Back',
   'error.404title': 'Page not found',
-  'error.404body': 'This page does not exist, or it moved somewhere else.',
-  'error.404cta': 'Back home',
+  'error.404body': 'This page may have moved, or the URL has a typo.',
+  'error.404cta': 'Back to home',
 } as const;
 
 export type TranslationKey = keyof typeof en;
 
 const id: Record<TranslationKey, string> = {
-  'meta.siteTitle': 'Zarvaism — Bintang Fadilah Ramadhan, Mobile & Frontend Developer',
+  'meta.siteTitle': 'Zarvaism | Bintang Fadilah Ramadhan, Mobile & Frontend Developer',
   'meta.description':
-    'Mobile dan Frontend Developer yang bekerja dengan Flutter, React, dan TypeScript. Membangun aplikasi produksi dengan Clean Architecture, BLoC, dan integrasi AI.',
+    'Mobile dan Frontend Developer dengan Flutter, React, dan TypeScript. Membangun aplikasi produksi dengan Clean Architecture, BLoC, dan integrasi REST API.',
 
   'nav.menu': 'Menu',
   'nav.skip': 'Lompat ke konten',
@@ -125,90 +120,85 @@ const id: Record<TranslationKey, string> = {
   'nav.contrastOn': 'Matikan kontras tinggi',
   'nav.contrastOff': 'Nyalakan kontras tinggi',
 
-  'hero.headline': 'Kebanyakan aplikasi berhenti saat kodenya jalan.',
-  'hero.headlineAccent': 'Saya tidak.',
+  'hero.headline': 'Saya membangun aplikasi mobile dan web',
+  'hero.headlineAccent': 'yang rapi dipakai.',
   'hero.sub':
-    'Mobile & frontend engineer yang membangun produk Flutter dan React — dari arsitektur bersih sampai detail interaksi terakhir.',
-  'hero.ctaPrimary': 'Lihat Karya',
-  'hero.ctaSecondary': 'Hubungi Saya',
+    'Developer Flutter dan React di Purwokerto. Saya merancang antarmuka di Figma, menyusun kode dengan BLoC atau TypeScript, lalu merilisnya sampai produksi.',
+  'hero.ctaPrimary': 'Lihat Karya Pilihan',
+  'hero.ctaSecondary': 'Kirim Email',
 
   'about.index': 'Tentang',
-  'about.title': 'Rasa ingin merancang visual yang berbicara lewat desain.',
+  'about.title': 'Pengembangan mobile dan frontend dengan latar desain.',
   'about.body':
-    'Halo, saya Bintang Fadilah Ramadhan. Saya mengubah ide rumit menjadi pengalaman interaktif yang tenang dan intuitif — menyeimbangkan ketelitian visual dengan logika fungsional yang kuat.',
+    'Halo, saya Bintang Fadilah Ramadhan. Saya merancang antarmuka di Figma dan mengimplementasikannya dengan Flutter serta React, dengan struktur kode yang mudah dilanjutkan tim berikutnya.',
   'about.body2':
-    'Bagi saya, menulis kode bukan sekadar membuat barisan kode, tetapi menyelesaikan masalah dan membuat aplikasi yang benar-benar menyenangkan dipakai. Setiap piksel dan interaksi kecil dirancang dengan sadar dan terarah.',
-  'about.subhead': 'Creative Technologist',
-  'about.subtitle': 'Mengubah ide menjadi pengalaman interaktif.',
+    'Sebagian besar pekerjaan saya berada di titik temu desain antarmuka dan arsitektur aplikasi: state management, integrasi API, dan tata letak responsif untuk pemakaian harian.',
+  'about.subhead': 'Mobile & Frontend Developer',
+  'about.subtitle': 'Dari rancangan Figma sampai rilis produksi.',
   'about.subbody':
-    'Memperhatikan detail visual sekaligus logika struktural di baliknya. Arsitektur bersih bertemu estetika yang berorientasi pada pengguna.',
+    'Struktur komponen yang rapi, state BLoC atau TypeScript yang terukur, dan antarmuka yang tetap nyaman dipakai di perangkat nyata.',
   'about.focus': 'Flutter & React',
-  'about.status': 'Terbuka untuk peluang',
+  'about.status': 'Terbuka untuk freelance',
 
-  'disciplines.eyebrow': 'Layanan & Keahlian',
+  'disciplines.eyebrow': 'Layanan',
   'disciplines.title': 'Yang Saya Kerjakan',
-  'disciplines.lede':
-    'Mengubah ide rumit menjadi produk digital yang fungsional. Inilah cara saya bisa membantu.',
+  'disciplines.lede': 'Aplikasi mobile, antarmuka web, dan sistem desain Figma yang siap diimplementasikan.',
 
-  'experience.eyebrow': 'Lintasan Karier',
+  'experience.eyebrow': 'Riwayat Karier',
   'experience.title': 'Pengalaman Kerja',
-  'experience.lede':
-    'Sejarah rekayasa produksi, design system, dan pengiriman produk.',
-  'experience.stepOf': 'Langkah {current} dari {total}',
+  'experience.lede': 'Pengalaman membangun aplikasi mobile, revamp frontend, dan mengajar praktikum.',
+  'experience.stepOf': 'Tahap {current} dari {total}',
 
-  'projects.eyebrow': 'Karya Terpilih & Studi Kasus',
+  'projects.eyebrow': 'Studi Kasus Pilihan',
   'projects.title': 'Proyek Pilihan.',
-  'projects.lede':
-    'Kurasi produk digital yang dibangun dengan kejelasan tipografi, arsitektur lintas platform, dan interaksi yang mengalir.',
-  'projects.viewCase': 'Lihat Studi Kasus',
+  'projects.lede': 'Tiga proyek yang mencakup pengembangan mobile, desain tiket turnamen, dan arsitektur web.',
+  'projects.viewCase': 'Baca Studi Kasus',
   'projects.problem': 'Masalahnya',
   'projects.approach': 'Pendekatan',
   'projects.result': 'Hasilnya',
-  'projects.highlights': 'Yang saya kerjakan',
+  'projects.highlights': 'Yang dikerjakan',
   'projects.gallery': 'Dalam aplikasi',
   'projects.stack': 'Stack',
   'projects.next': 'Proyek berikutnya',
   'projects.back': 'Kembali ke beranda',
 
-  'archive.eyebrow': 'Arsip & Eksperimen',
+  'archive.eyebrow': 'Arsip',
   'archive.title': 'Proyek Lainnya.',
-  'archive.lede':
-    'Katalog venture kedua, modul open-source, eksperimen antarmuka, dan alat kecil.',
+  'archive.lede': 'Daftar platform klien, rilis aplikasi mobile, serta proyek kampus dan HKI lainnya.',
   'archive.colYear': 'Tahun',
   'archive.colProject': 'Proyek',
   'archive.colCategory': 'Kategori',
   'archive.colStack': 'Tech Stack',
-  'archive.colArtifact': 'Bukti',
+  'archive.colArtifact': 'Status',
 
   'contact.index': 'Kontak',
   'contact.title': 'Mari bekerja sama',
-  'contact.lede':
-    'Punya lowongan, proyek, atau sekadar penasaran bagaimana sesuatu dibangun? Email saya terbuka.',
+  'contact.lede': 'Punya proyek freelance, lowongan, atau pertanyaan teknis tentang salah satu karya di sini? Silakan kirim email.',
   'contact.name': 'Nama',
-  'contact.nameHint': 'Nama yang ingin Anda dipanggil.',
+  'contact.nameHint': 'Nama yang Anda ingin saya gunakan saat membalas.',
   'contact.email': 'Email',
-  'contact.emailHint': 'Alamat email aktif, agar saya bisa membalas.',
+  'contact.emailHint': 'Alamat email aktif agar saya bisa membalas.',
   'contact.message': 'Pesan',
-  'contact.messageHint': 'Beberapa baris tentang lowongan, proyek, atau pertanyaannya.',
+  'contact.messageHint': 'Ceritakan singkat tentang proyek, posisi, atau pertanyaan Anda.',
   'contact.send': 'Kirim pesan',
-  'contact.sending': 'Mengirim…',
-  'contact.success': 'Pesan terkirim. Terima kasih — saya akan segera membalas.',
+  'contact.sending': 'Mengirim...',
+  'contact.success': 'Pesan terkirim. Terima kasih, saya akan segera membalas.',
   'contact.error': 'Terjadi kesalahan. Silakan coba lagi atau kirim email langsung.',
 
   'footer.tagline': 'Mari bekerja sama',
   'footer.rights': 'Seluruh hak cipta dilindungi',
   'footer.builtWith': 'Dibangun dengan',
 
-  'blog.index': 'Menulis',
-  'blog.title': 'Catatan dari proses bangun',
-  'blog.lede': 'Tulisan sesekali tentang rekayasa mobile, UI/UX, dan perkakas di antaranya.',
-  'blog.minRead': 'menit',
-  'blog.empty': 'Belum ada tulisan — cek lagi nanti.',
+  'blog.index': 'Tulisan',
+  'blog.title': 'Catatan teknis',
+  'blog.lede': 'Catatan tentang Flutter, arsitektur frontend, dan keputusan teknis di balik proyek saya.',
+  'blog.minRead': 'menit baca',
+  'blog.empty': 'Belum ada tulisan. Cek kembali nanti.',
   'blog.back': 'Semua tulisan',
   'blog.published': 'Terbit',
 
   'cv.title': 'Curriculum Vitae',
-  'cv.lede': 'Versi satu halaman dari resume saya, siap dicetak.',
+  'cv.lede': 'Ringkasan pengalaman kerja dan pendidikan satu halaman yang siap dicetak.',
   'cv.print': 'Cetak / Simpan PDF',
   'cv.summary': 'Ringkasan',
   'cv.education': 'Pendidikan',
@@ -216,11 +206,11 @@ const id: Record<TranslationKey, string> = {
   'cv.projects': 'Proyek Utama',
   'cv.certifications': 'Sertifikasi',
   'cv.organisation': 'Organisasi & Kepanitiaan',
-  'cv.skills': 'Kemampuan',
+  'cv.skills': 'Keahlian',
 
   'common.back': 'Kembali',
   'error.404title': 'Halaman tidak ditemukan',
-  'error.404body': 'Halaman ini tidak ada, atau sudah dipindahkan ke tempat lain.',
+  'error.404body': 'Halaman ini mungkin sudah dipindahkan, atau alamat URL-nya salah ketik.',
   'error.404cta': 'Kembali ke beranda',
 };
 
@@ -250,7 +240,7 @@ export function localeFromPath(pathname: string): Locale {
 /*
  * Reads the *second* segment, not the first. `'/id'.split('/')` is `['', 'id']`,
  * so the first element is an empty string and the bare locale home page fell
- * through the check unchanged — which is why the switcher on `/id` produced
+ * through the check unchanged, which is why the switcher on `/id` produced
  * `/id` instead of `/`.
  */
 export function pathWithoutLocale(pathname: string): string {
@@ -265,20 +255,11 @@ export function pathWithoutLocale(pathname: string): string {
  * `/id/projects/artiva` -> `/projects/artiva` (to 'en')
  * `/projects/artiva`     -> `/id/projects/artiva` (to 'id')
  *
- * The switcher used to hardcode `/` and `/id`, so from any page other than the
- * home page it either did nothing or dropped the visitor on the Indonesian home
- * page. `localePath` cannot express this on its own: it builds a path from
- * scratch rather than swapping a prefix, so handing it a bare `/` loses the
- * current route.
- *
- * Blog posts are the exception. Each declares its own `lang` in frontmatter and
- * the route is built from that, so `/blog/why-astro` and `/id/blog/kenapa-astro`
- * are different documents and there is no Indonesian version of the English
- * post. Swapping the prefix there is a guaranteed 404, so those land on the
- * blog index in the target language instead, which always exists.
+ * Blog posts declare their own `lang` in frontmatter and each route is built
+ * from that, so swapping the prefix lands on the target language blog index
+ * instead of a 404.
  */
 export function swapLocale(pathname: string, to: Locale): string {
   const bare = pathWithoutLocale(pathname);
   return localePath(to, /^\/blog\/[^/]+\/?$/.test(bare) ? '/blog' : bare);
 }
-
