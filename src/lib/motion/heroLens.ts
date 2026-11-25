@@ -32,6 +32,11 @@ function clamp(v: number, min: number, max: number): number {
   return v < min ? min : v > max ? max : v;
 }
 
+function smoothstep(e0: number, e1: number, x: number): number {
+  const t = clamp((x - e0) / Math.max(0.0001, e1 - e0), 0, 1);
+  return t * t * (3 - 2 * t);
+}
+
 export function initHeroLens(): () => void {
   const hero = document.getElementById('hero');
   const canvasWrap = hero?.querySelector<HTMLElement>('[data-hero-canvas-wrap]');
@@ -78,6 +83,8 @@ export function initHeroLens(): () => void {
   const portraitCtx = portraitCanvas.getContext('2d');
   const photoCanvas = document.createElement('canvas');
   const photoCtx = photoCanvas.getContext('2d');
+  const maskCanvas = document.createElement('canvas');
+  const maskCtx = maskCanvas.getContext('2d');
 
   const img = new Image();
   img.decoding = 'async';
@@ -95,14 +102,16 @@ export function initHeroLens(): () => void {
   let gridRows = 0;
   let toneGrid = new Float32Array(0);
   let alphaGrid = new Float32Array(0);
+  let pixAlphaGrid = new Float32Array(0);
   let photoRect = { ox: 0, oy: 0, dw: 0, dh: 0 };
 
-  // Interactive motion state
+  // Interactive motion state & liquid brush trail
   const state = {
     introProgress: reduced ? 1 : 0,
     scrollProgress: 0,
     touchAlpha: 0,
   };
+  const trail: Array<{ x: number; y: number; life: number; r: number }> = [];
 
   let curX = 0;
   let curY = 0;
@@ -153,6 +162,7 @@ export function initHeroLens(): () => void {
     if (toneGrid.length !== total) {
       toneGrid = new Float32Array(total);
       alphaGrid = new Float32Array(total);
+      pixAlphaGrid = new Float32Array(total);
     }
 
     let borderTotal = 0;
@@ -195,6 +205,7 @@ export function initHeroLens(): () => void {
           const darkness = clamp((0.86 - lum) / 0.82, 0, 1);
           toneGrid[idx] = Math.pow(darkness, 1.2) * pixA;
           alphaGrid[idx] = hFade * vFade * pixA;
+          pixAlphaGrid[idx] = pixA;
         } else {
           // Chrominance fallback for opaque portrait uploads without alpha transparency
           const blueExcess = Math.max(0, bCh - rCh * 1.04);
@@ -203,9 +214,36 @@ export function initHeroLens(): () => void {
           const darkness = clamp((0.82 - lum) / 0.78, 0, 1);
           toneGrid[idx] = Math.pow(darkness, 1.24) * cyanSuppress;
           alphaGrid[idx] = hFade * vFade;
+          pixAlphaGrid[idx] = toneGrid[idx] > 0.06 ? 1 : 0;
         }
       }
     }
+  };
+
+  const isNearPortrait = (px: number, py: number): boolean => {
+    if (!imgReady || !gridCols || !gridRows) return false;
+    const drawX = isDesktop ? pX : 0;
+    const scrollLiftY = state.scrollProgress > 0.005 ? -state.scrollProgress * 38 : 0;
+    const lx = px - parX - drawX;
+    const ly = py - parY - scrollLiftY;
+    const cCenter = Math.round(lx / pitch);
+    const rCenter = Math.round(ly / pitch);
+    const radiusCells = Math.ceil(44 / pitch);
+    for (let dr = -radiusCells; dr <= radiusCells; dr++) {
+      const rr = rCenter + dr;
+      if (rr < 0 || rr >= gridRows) continue;
+      const rowOff = rr * gridCols;
+      for (let dc = -radiusCells; dc <= radiusCells; dc++) {
+        if (dr * dr + dc * dc > radiusCells * radiusCells) continue;
+        const cc = cCenter + dc;
+        if (cc < 0 || cc >= gridCols) continue;
+        const idx = rowOff + cc;
+        if (pixAlphaGrid[idx] > 0.25 && alphaGrid[idx] > 0.08) {
+          return true;
+        }
+      }
+    }
+    return false;
   };
 
   const draw = () => {
@@ -215,58 +253,76 @@ export function initHeroLens(): () => void {
     const night = isNight();
     const scrollP = state.scrollProgress;
     const introP = reduced ? 1 : state.introProgress;
-    const activeLight = reduced ? 0 : Math.max(lightAlpha, state.touchAlpha);
+    const drawX = isDesktop ? pX : 0;
+    const scrollLiftY = scrollP > 0.005 ? -scrollP * 38 : 0;
 
-    // 1. Desktop left reactive architectural dot grid (calm Zamkara rhythm)
+    // 1. Desktop full-bleed reactive architectural dot grid spanning edge to edge
     if (isDesktop) {
-      const bgPitch = 26;
-      const maxX = Math.min(width, pX + pW * 0.16);
+      const bgPitch = 24;
       const restPath = new Path2D();
       const hotPath = new Path2D();
 
-      for (let y = 20; y < height - 12; y += bgPitch) {
-        for (let x = 22; x < maxX; x += bgPitch) {
-          const edgeFade = x > pX ? clamp(1 - (x - pX) / (pW * 0.16), 0, 1) : 1;
+      for (let y = 16; y <= height - 14; y += bgPitch) {
+        for (let x = 10; x <= width - 10; x += bgPitch) {
+          const edgeL = clamp((x - 4) / 14, 0, 1);
+          const edgeR = clamp((width - 4 - x) / 14, 0, 1);
+          const edgeFade = Math.min(edgeL, edgeR);
           if (edgeFade < 0.08) continue;
 
+          let bodyMask = 0;
+          if (imgReady && gridCols && gridRows) {
+            const gc = Math.round((x - parX - drawX) / pitch);
+            const gr = Math.round((y - parY - scrollLiftY) / pitch);
+            if (gc >= 0 && gc < gridCols && gr >= 0 && gr < gridRows) {
+              bodyMask = pixAlphaGrid[gr * gridCols + gc];
+            }
+          }
+          const calmBehindBody = 1 - bodyMask * 0.8;
+
           let boost = 0;
+          let pushX = 0;
+          let pushY = 0;
           if (!reduced && pointerInside) {
-            const dist = Math.hypot(x - curX, y - curY);
-            if (dist < 160) {
-              boost = Math.pow(1 - dist / 160, 1.4);
+            const vx = x - curX;
+            const vy = y - curY;
+            const dist = Math.hypot(vx, vy);
+            if (dist < 185) {
+              boost = Math.pow(1 - dist / 185, 1.45);
+              pushX = (vx / Math.max(1, dist)) * boost * 2.5;
+              pushY = (vy / Math.max(1, dist)) * boost * 2.5;
             }
           }
 
-          const r = (1.0 + boost * 1.9) * edgeFade * (1 - scrollP * 0.55);
-          if (r < 0.45) continue;
+          const r = (1.1 + boost * 2.1) * edgeFade * calmBehindBody * (1 - scrollP * 0.55);
+          if (r < 0.42) continue;
 
-          const target = boost > 0.16 ? hotPath : restPath;
-          target.moveTo(x + r, y);
-          target.arc(x, y, r, 0, Math.PI * 2);
+          const target = boost > 0.14 ? hotPath : restPath;
+          target.moveTo(x + pushX + r, y + pushY);
+          target.arc(x + pushX, y + pushY, r, 0, Math.PI * 2);
         }
       }
 
-      ctx.fillStyle = night ? 'rgba(228, 231, 236, 0.085)' : 'rgba(22, 24, 29, 0.08)';
+      ctx.fillStyle = night ? 'rgba(228, 231, 236, 0.11)' : 'rgba(22, 24, 29, 0.095)';
       ctx.fill(restPath);
-      ctx.fillStyle = night ? 'rgba(242, 95, 76, 0.58)' : 'rgba(201, 51, 38, 0.48)';
+      ctx.fillStyle = night ? 'rgba(242, 95, 76, 0.68)' : 'rgba(201, 51, 38, 0.56)';
       ctx.fill(hotPath);
     }
 
     if (!imgReady || !gridCols || !gridRows || !portraitCtx) return;
 
-    const drawX = isDesktop ? pX : 0;
     const maxR = pitch * 0.43;
+    const introReady = clamp((introP - 0.55) / 0.45, 0, 1);
+    const scrollFade = clamp(1 - scrollP * 1.35, 0, 1);
+    const trailGate = reduced ? 0 : introReady * scrollFade;
+    const hasTrail = trailGate > 0.015 && trail.length > 0;
 
-    // 2. Render crisp, grid-locked halftone print onto portraitCanvas (ZERO crawling/squirming)
+    // 2. Render crisp, grid-locked halftone print onto portraitCanvas with organic Liquid Trail dissolve
     portraitCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     portraitCtx.clearRect(0, 0, width, height);
 
     const softPath = new Path2D();
     const midPath = new Path2D();
     const deepPath = new Path2D();
-
-    // Gentle unified upward glide on scroll (clean architectural elevation, zero chaotic bug-scatter)
-    const scrollLiftY = scrollP > 0.005 ? -scrollP * 38 : 0;
 
     for (let row = 0; row < gridRows; row++) {
       const ny = row / Math.max(1, gridRows - 1);
@@ -297,12 +353,26 @@ export function initHeroLens(): () => void {
           scrollScale = Math.pow(dissolveWave, 1.15);
         }
 
-        const r = Math.min(maxR, tone * maxR * a * pressScale * scrollScale);
-        if (r < 0.45) continue;
-
         // Every dot stays strictly on its clean architectural grid + smooth whole-portrait parallax
         const fx = drawX + col * pitch + staggerX + parX;
         const fy = oy + parY + scrollLiftY;
+
+        let r = Math.min(maxR, tone * maxR * a * pressScale * scrollScale);
+        if (hasTrail) {
+          let erase = 0;
+          for (let b = 0; b < trail.length; b++) {
+            const blob = trail[b];
+            const dist = Math.hypot(fx - blob.x, fy - blob.y);
+            if (dist < blob.r) {
+              const e = (1 - smoothstep(blob.r * 0.32, blob.r * 0.96, dist)) * blob.life * trailGate;
+              if (e > erase) erase = e;
+            }
+          }
+          if (erase > 0.94) continue;
+          r *= 1 - erase;
+        }
+
+        if (r < 0.42) continue;
 
         let bucket: Path2D;
         if (tone > 0.74) {
@@ -336,48 +406,28 @@ export function initHeroLens(): () => void {
       portraitCtx.fill(deepPath);
     }
 
-    const introReady = clamp((introP - 0.55) / 0.45, 0, 1);
-    const scrollFade = clamp(1 - scrollP * 1.35, 0, 1);
-    const reveal = activeLight * introReady * scrollFade;
+    ctx.drawImage(portraitCanvas, 0, 0, width, height);
 
-    // Moment 2: Gallery Studio Light Wash (`source-atop` illuminates ONLY the crisp halftone dots)
-    if (reveal > 0.015) {
-      const lightR = isDesktop ? 245 : 155;
-      portraitCtx.save();
-      portraitCtx.globalCompositeOperation = 'source-atop';
-      const grad = portraitCtx.createRadialGradient(curX, curY, 0, curX, curY, lightR);
-      if (night) {
-        grad.addColorStop(0, `rgba(255, 138, 120, ${(0.58 * reveal).toFixed(3)})`);
-        grad.addColorStop(0.45, `rgba(242, 95, 76, ${(0.30 * reveal).toFixed(3)})`);
-        grad.addColorStop(1, 'rgba(242, 95, 76, 0)');
-      } else {
-        grad.addColorStop(0, `rgba(218, 62, 46, ${(0.56 * reveal).toFixed(3)})`);
-        grad.addColorStop(0.48, `rgba(201, 51, 38, ${(0.24 * reveal).toFixed(3)})`);
-        grad.addColorStop(1, 'rgba(201, 51, 38, 0)');
+    // 3. Organic Liquid Trail Ink Brush photo reveal (overlapping fluid brush stamps)
+    if (hasTrail && photoCtx && maskCtx && photoRect.dw > 0) {
+      maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      maskCtx.clearRect(0, 0, width, height);
+      maskCtx.globalCompositeOperation = 'lighter';
+      for (let b = 0; b < trail.length; b++) {
+        const blob = trail[b];
+        const alpha = blob.life * trailGate;
+        if (alpha < 0.015) continue;
+        const g = maskCtx.createRadialGradient(blob.x, blob.y, blob.r * 0.15, blob.x, blob.y, blob.r);
+        g.addColorStop(0, `rgba(0, 0, 0, ${alpha.toFixed(3)})`);
+        g.addColorStop(0.55, `rgba(0, 0, 0, ${(0.72 * alpha).toFixed(3)})`);
+        g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        maskCtx.fillStyle = g;
+        maskCtx.beginPath();
+        maskCtx.arc(blob.x, blob.y, blob.r, 0, Math.PI * 2);
+        maskCtx.fill();
       }
-      portraitCtx.fillStyle = grad;
-      portraitCtx.fillRect(0, 0, width, height);
-      portraitCtx.restore();
-    }
+      maskCtx.globalCompositeOperation = 'source-over';
 
-    const showPhotoLens = reveal > 0.015 && Boolean(photoCtx) && photoRect.dw > 0;
-    const baseLensR = isDesktop ? 155 : 108;
-    const lensR = baseLensR * (0.72 + 0.28 * reveal);
-
-    if (showPhotoLens && photoCtx) {
-      // Melt halftone dots smoothly inside the optical lens
-      portraitCtx.save();
-      portraitCtx.globalCompositeOperation = 'destination-out';
-      const holeGrad = portraitCtx.createRadialGradient(curX, curY, 0, curX, curY, lensR);
-      holeGrad.addColorStop(0, `rgba(0, 0, 0, ${reveal.toFixed(3)})`);
-      holeGrad.addColorStop(0.72, `rgba(0, 0, 0, ${reveal.toFixed(3)})`);
-      holeGrad.addColorStop(0.92, `rgba(0, 0, 0, ${(0.45 * reveal).toFixed(3)})`);
-      holeGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      portraitCtx.fillStyle = holeGrad;
-      portraitCtx.fillRect(0, 0, width, height);
-      portraitCtx.restore();
-
-      // Draw pixel-aligned alpha-transparent portrait onto photoCanvas with feathered circular mask
       photoCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
       photoCtx.clearRect(0, 0, width, height);
       photoCtx.globalCompositeOperation = 'source-over';
@@ -390,22 +440,16 @@ export function initHeroLens(): () => void {
       );
 
       photoCtx.globalCompositeOperation = 'destination-in';
-      const lensGrad = photoCtx.createRadialGradient(curX, curY, 0, curX, curY, lensR);
-      lensGrad.addColorStop(0, `rgba(0, 0, 0, ${reveal.toFixed(3)})`);
-      lensGrad.addColorStop(0.74, `rgba(0, 0, 0, ${reveal.toFixed(3)})`);
-      lensGrad.addColorStop(0.92, `rgba(0, 0, 0, ${(0.45 * reveal).toFixed(3)})`);
-      lensGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      photoCtx.fillStyle = lensGrad;
-      photoCtx.fillRect(0, 0, width, height);
+      photoCtx.drawImage(maskCanvas, 0, 0, width, height);
 
       if (isDesktop) {
-        const edgeGrad = photoCtx.createLinearGradient(pX, 0, width, 0);
+        const edgeGrad = photoCtx.createLinearGradient(pX, 0, pX + pW, 0);
         edgeGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
         edgeGrad.addColorStop(0.08, 'rgba(0, 0, 0, 1)');
         edgeGrad.addColorStop(0.93, 'rgba(0, 0, 0, 1)');
         edgeGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
         photoCtx.fillStyle = edgeGrad;
-        photoCtx.fillRect(0, 0, width, height);
+        photoCtx.fillRect(pX, 0, pW, height);
       }
 
       const vEdgeGrad = photoCtx.createLinearGradient(0, 0, 0, height);
@@ -424,29 +468,9 @@ export function initHeroLens(): () => void {
       }
       photoCtx.fillStyle = vEdgeGrad;
       photoCtx.fillRect(0, 0, width, height);
-
       photoCtx.globalCompositeOperation = 'source-over';
-    }
 
-    ctx.drawImage(portraitCanvas, 0, 0, width, height);
-
-    if (showPhotoLens && photoCtx) {
       ctx.drawImage(photoCanvas, 0, 0, width, height);
-
-      ctx.save();
-      if (isDesktop) {
-        ctx.beginPath();
-        ctx.rect(pX + 4, 0, pW - 6, height);
-        ctx.clip();
-      }
-      ctx.beginPath();
-      ctx.arc(curX, curY, lensR * 0.9, 0, Math.PI * 2);
-      ctx.lineWidth = 1;
-      ctx.strokeStyle = night
-        ? `rgba(242, 95, 76, ${(0.36 * reveal).toFixed(3)})`
-        : `rgba(201, 51, 38, ${(0.30 * reveal).toFixed(3)})`;
-      ctx.stroke();
-      ctx.restore();
     }
   };
 
@@ -466,8 +490,10 @@ export function initHeroLens(): () => void {
     height = nextH;
     isDesktop = nextDesktop;
     dpr = nextDpr;
-    pX = isDesktop ? Math.round(width * 0.4) : 0;
-    pW = width - pX;
+    const stageW = isDesktop ? Math.min(width, 1440) : width;
+    const stageX = isDesktop ? Math.round((width - stageW) * 0.5) : 0;
+    pX = isDesktop ? stageX + Math.round(stageW * 0.4) : 0;
+    pW = isDesktop ? Math.round(stageW * 0.6) : width;
 
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
@@ -477,6 +503,8 @@ export function initHeroLens(): () => void {
     portraitCanvas.height = canvas.height;
     photoCanvas.width = canvas.width;
     photoCanvas.height = canvas.height;
+    maskCanvas.width = canvas.width;
+    maskCanvas.height = canvas.height;
 
     if (!pointerInside) {
       curX = isDesktop ? pX + pW * 0.52 : width * 0.5;
@@ -492,6 +520,7 @@ export function initHeroLens(): () => void {
   const needsTick = (): boolean => {
     if (reduced) return false;
     if (introActive) return true;
+    if (trail.length > 0) return true;
     if (touchTween && touchTween.isActive()) return true;
     if (Math.abs(targetX - curX) > 0.15 || Math.abs(targetY - curY) > 0.15) return true;
     if (Math.abs(targetLightAlpha - lightAlpha) > 0.008) return true;
@@ -505,11 +534,27 @@ export function initHeroLens(): () => void {
       return;
     }
 
-    curX += (targetX - curX) * 0.14;
-    curY += (targetY - curY) * 0.14;
-    lightAlpha += (targetLightAlpha - lightAlpha) * 0.11;
+    curX += (targetX - curX) * 0.17;
+    curY += (targetY - curY) * 0.17;
+    lightAlpha += (targetLightAlpha - lightAlpha) * 0.13;
     parX += (targetParX - parX) * 0.10;
     parY += (targetParY - parY) * 0.10;
+
+    if (trail.length > 0) {
+      const keepHead = targetLightAlpha > 0.5 || state.touchAlpha > 0.2;
+      for (let i = trail.length - 1; i >= 0; i--) {
+        if (i === 0 && keepHead) {
+          trail[i].x = curX;
+          trail[i].y = curY;
+          trail[i].life += (1 - trail[i].life) * 0.2;
+        } else {
+          trail[i].life *= 0.935;
+          if (trail[i].life < 0.02) {
+            trail.splice(i, 1);
+          }
+        }
+      }
+    }
 
     draw();
 
@@ -781,16 +826,20 @@ export function initHeroLens(): () => void {
     targetX = x;
     targetY = y;
 
-    const overPortrait =
-      x >= pX + pW * 0.06 &&
-      x <= width - 8 &&
-      y >= height * 0.03 &&
-      y <= height * 0.97;
-    targetLightAlpha = overPortrait ? 1 : 0;
+    const near = isNearPortrait(x, y);
+    targetLightAlpha = near ? 1 : 0;
 
-    if (overPortrait && !hintDismissed) {
+    if (near && !hintDismissed) {
       hintDismissed = true;
       lensHint?.setAttribute('data-dismissed', 'true');
+    }
+
+    if (near) {
+      const head = trail[0];
+      if (!head || Math.hypot(x - head.x, y - head.y) > 16) {
+        trail.unshift({ x, y, life: 0.95, r: 78 });
+        if (trail.length > 10) trail.pop();
+      }
     }
 
     const normX = clamp(x / Math.max(1, width) - 0.5, -0.5, 0.5);
@@ -819,6 +868,12 @@ export function initHeroLens(): () => void {
     if (!state.touchAlpha) {
       curX = x;
       curY = y;
+    }
+
+    const head = trail[0];
+    if (!head || Math.hypot(x - head.x, y - head.y) > 14) {
+      trail.unshift({ x, y, life: 0.95, r: 62 });
+      if (trail.length > 8) trail.pop();
     }
 
     if (state.touchAlpha < 0.99 && (!touchTween || !touchTween.isActive())) {
@@ -962,6 +1017,7 @@ export function initHeroLens(): () => void {
   return () => {
     killed = true;
     introActive = false;
+    trail.length = 0;
     img.onload = null;
     if (rafId) window.cancelAnimationFrame(rafId);
     if (resizeRaf) window.cancelAnimationFrame(resizeRaf);

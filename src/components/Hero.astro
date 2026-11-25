@@ -35,7 +35,7 @@ const portraitSrc = hero.portraitUrl
   data-cms-section="hero"
   class="relative flex min-h-svh flex-col overflow-x-clip bg-canvas text-ink"
 >
-  <div data-hero-stage class="relative mx-auto flex w-full max-w-[1440px] flex-1 flex-col">
+  <div data-hero-stage class="relative flex w-full flex-1 flex-col">
     <!-- HeyNesh-inspired first-load kinetic wordmark opening (zero-FOUC via html.js, auto-skipped on revisit/scroll/reduced-motion) -->
     <div
       data-hero-opening
@@ -74,7 +74,7 @@ const portraitSrc = hero.portraitUrl
     <div
       data-hero-watermark
       aria-hidden="true"
-      class="hero-watermark pointer-events-none absolute bottom-0 left-10 z-[1] hidden select-none overflow-hidden lg:block xl:left-16"
+      class="hero-watermark pointer-events-none absolute inset-x-0 bottom-0 z-[1] mx-auto hidden w-full max-w-[1440px] select-none overflow-hidden px-10 lg:block xl:px-16"
     >
       <p
         data-hero-watermark-text
@@ -84,7 +84,7 @@ const portraitSrc = hero.portraitUrl
       </p>
     </div>
 
-    <div class="relative flex min-w-0 flex-1 flex-col justify-between px-5 pt-5 pb-4 sm:px-10 sm:pt-10 sm:pb-6 lg:px-16 lg:pt-12 lg:pb-8">
+    <div class="mx-auto flex w-full max-w-[1440px] min-w-0 flex-1 flex-col justify-between px-5 pt-5 pb-4 sm:px-10 sm:pt-10 sm:pb-6 lg:px-16 lg:pt-12 lg:pb-8">
       <!-- Quiet editorial top meta strip -->
       <div
         data-hero-eyebrow
