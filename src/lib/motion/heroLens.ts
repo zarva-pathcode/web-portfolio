@@ -85,10 +85,16 @@ export function initHeroLens(): () => void {
   const photoCtx = photoCanvas.getContext('2d');
   const maskCanvas = document.createElement('canvas');
   const maskCtx = maskCanvas.getContext('2d');
+  const baseBgCanvas = document.createElement('canvas');
+  const baseBgCtx = baseBgCanvas.getContext('2d');
+  const basePortraitCanvas = document.createElement('canvas');
+  const basePortraitCtx = basePortraitCanvas.getContext('2d');
 
   const img = new Image();
   img.decoding = 'async';
   let imgReady = false;
+  let staticLayersTheme = '';
+  let staticLayersDirty = true;
 
   // Layout & pre-sampled architectural halftone grid
   let width = 0;
@@ -130,6 +136,8 @@ export function initHeroLens(): () => void {
   let killed = false;
   let rafId = 0;
   let resizeRaf = 0;
+  let scrollRaf = 0;
+  let lastTickTime = 0;
   let introActive = false;
   let touchTween: gsap.core.Tween | null = null;
   let introTl: gsap.core.Timeline | null = null;
@@ -180,9 +188,9 @@ export function initHeroLens(): () => void {
 
     for (let row = 0; row < gridRows; row++) {
       const ny = row / Math.max(1, gridRows - 1);
-      // Clean top & bottom edge fade only (zero circular/oval mask)
+      // Clean top edge fade only on desktop so suit shoulders anchor flush onto the ticker border
       const topFade = isDesktop ? clamp((ny - 0.06) / 0.14, 0, 1) : clamp(ny / 0.12, 0, 1);
-      const botFade = isDesktop ? clamp((0.99 - ny) / 0.16, 0, 1) : clamp((1 - ny) / 0.18, 0, 1);
+      const botFade = isDesktop ? 1 : clamp((1 - ny) / 0.18, 0, 1);
       const vFade = topFade * botFade;
 
       const rowOff = row * gridCols;
@@ -218,6 +226,101 @@ export function initHeroLens(): () => void {
         }
       }
     }
+    staticLayersDirty = true;
+  };
+
+  const bakeStaticLayers = (night: boolean) => {
+    if (!width || !height) return;
+
+    // 1. Pre-bake desktop edge-to-edge rest dot matrix once per resize / theme swap
+    if (isDesktop && baseBgCtx) {
+      baseBgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      baseBgCtx.clearRect(0, 0, width, height);
+
+      const bgPitch = 24;
+      const drawX = pX;
+      const restPath = new Path2D();
+      for (let y = 8; y <= height - 4; y += bgPitch) {
+        for (let x = 10; x <= width - 10; x += bgPitch) {
+          const edgeL = clamp((x - 4) / 14, 0, 1);
+          const edgeR = clamp((width - 4 - x) / 14, 0, 1);
+          const edgeFade = Math.min(edgeL, edgeR);
+          if (edgeFade < 0.08) continue;
+
+          let bodyMask = 0;
+          if (imgReady && gridCols && gridRows) {
+            const gc = Math.round((x - drawX) / pitch);
+            const gr = Math.round(y / pitch);
+            if (gc >= 0 && gc < gridCols && gr >= 0 && gr < gridRows) {
+              bodyMask = pixAlphaGrid[gr * gridCols + gc];
+            }
+          }
+          const r = 1.1 * edgeFade * (1 - bodyMask * 0.8);
+          if (r < 0.42) continue;
+
+          restPath.moveTo(x + r, y);
+          restPath.arc(x, y, r, 0, Math.PI * 2);
+        }
+      }
+      baseBgCtx.fillStyle = night ? 'rgba(228, 231, 236, 0.11)' : 'rgba(22, 24, 29, 0.095)';
+      baseBgCtx.fill(restPath);
+    } else if (baseBgCtx) {
+      baseBgCtx.setTransform(1, 0, 0, 1, 0, 0);
+      baseBgCtx.clearRect(0, 0, baseBgCanvas.width, baseBgCanvas.height);
+    }
+
+    // 2. Pre-bake settled halftone portrait once per image load / resize / theme swap
+    if (basePortraitCtx) {
+      basePortraitCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      basePortraitCtx.clearRect(0, 0, width, height);
+
+      if (imgReady && gridCols && gridRows) {
+        const drawX = isDesktop ? pX : 0;
+        const maxR = pitch * 0.43;
+        const softPath = new Path2D();
+        const midPath = new Path2D();
+        const deepPath = new Path2D();
+
+        for (let row = 0; row < gridRows; row++) {
+          const oy = row * pitch + pitch * 0.5;
+          const staggerX = row & 1 ? pitch * 0.5 : 0;
+          const rowOff = row * gridCols;
+          for (let col = 0; col < gridCols; col++) {
+            const idx = rowOff + col;
+            const a = alphaGrid[idx];
+            const tone = toneGrid[idx];
+            if (a < 0.04 || tone < 0.05) continue;
+
+            const r = Math.min(maxR, tone * maxR * a);
+            if (r < 0.42) continue;
+
+            const fx = drawX + col * pitch + staggerX;
+            const bucket = tone > 0.74 ? deepPath : tone > 0.32 ? midPath : softPath;
+            bucket.moveTo(fx + r, oy);
+            bucket.arc(fx, oy, r, 0, Math.PI * 2);
+          }
+        }
+
+        if (night) {
+          basePortraitCtx.fillStyle = 'rgba(242, 95, 76, 0.36)';
+          basePortraitCtx.fill(softPath);
+          basePortraitCtx.fillStyle = 'rgba(170, 178, 190, 0.78)';
+          basePortraitCtx.fill(midPath);
+          basePortraitCtx.fillStyle = 'rgba(228, 231, 236, 0.92)';
+          basePortraitCtx.fill(deepPath);
+        } else {
+          basePortraitCtx.fillStyle = 'rgba(201, 51, 38, 0.26)';
+          basePortraitCtx.fill(softPath);
+          basePortraitCtx.fillStyle = 'rgba(58, 63, 74, 0.76)';
+          basePortraitCtx.fill(midPath);
+          basePortraitCtx.fillStyle = 'rgba(22, 24, 29, 0.92)';
+          basePortraitCtx.fill(deepPath);
+        }
+      }
+    }
+
+    staticLayersTheme = night ? 'night' : 'paper';
+    staticLayersDirty = false;
   };
 
   const isNearPortrait = (px: number, py: number): boolean => {
@@ -251,61 +354,76 @@ export function initHeroLens(): () => void {
     ctx.clearRect(0, 0, width, height);
 
     const night = isNight();
+    const themeKey = night ? 'night' : 'paper';
+    if (staticLayersDirty || staticLayersTheme !== themeKey) {
+      bakeStaticLayers(night);
+    }
+
     const scrollP = state.scrollProgress;
     const introP = reduced ? 1 : state.introProgress;
     const drawX = isDesktop ? pX : 0;
     const scrollLiftY = scrollP > 0.005 ? -scrollP * 38 : 0;
+    const px = Math.round(parX * dpr) / dpr;
+    const py = Math.round(parY * dpr) / dpr;
 
-    // 1. Desktop full-bleed reactive architectural dot grid spanning edge to edge
-    if (isDesktop) {
-      const bgPitch = 24;
-      const restPath = new Path2D();
-      const hotPath = new Path2D();
+    // 1. Desktop full-bleed reactive dot grid: O(1) static blit + tiny local hot patch near cursor
+    if (isDesktop && baseBgCtx) {
+      const bgScrollAlpha = scrollP > 0.005 ? clamp(1 - scrollP * 0.55, 0, 1) : 1;
+      if (bgScrollAlpha > 0.02) {
+        if (bgScrollAlpha < 0.995) {
+          ctx.save();
+          ctx.globalAlpha = bgScrollAlpha;
+          ctx.drawImage(baseBgCanvas, 0, 0, width, height);
+          ctx.restore();
+        } else {
+          ctx.drawImage(baseBgCanvas, 0, 0, width, height);
+        }
 
-      for (let y = 16; y <= height - 14; y += bgPitch) {
-        for (let x = 10; x <= width - 10; x += bgPitch) {
-          const edgeL = clamp((x - 4) / 14, 0, 1);
-          const edgeR = clamp((width - 4 - x) / 14, 0, 1);
-          const edgeFade = Math.min(edgeL, edgeR);
-          if (edgeFade < 0.08) continue;
+        if (!reduced && pointerInside) {
+          const bgPitch = 24;
+          const hotRadius = 185;
+          const hotPath = new Path2D();
+          const startX = Math.max(10, 10 + Math.floor((curX - hotRadius - 10) / bgPitch) * bgPitch);
+          const endX = Math.min(width - 10, curX + hotRadius);
+          const startY = Math.max(8, 8 + Math.floor((curY - hotRadius - 8) / bgPitch) * bgPitch);
+          const endY = Math.min(height - 4, curY + hotRadius);
 
-          let bodyMask = 0;
-          if (imgReady && gridCols && gridRows) {
-            const gc = Math.round((x - parX - drawX) / pitch);
-            const gr = Math.round((y - parY - scrollLiftY) / pitch);
-            if (gc >= 0 && gc < gridCols && gr >= 0 && gr < gridRows) {
-              bodyMask = pixAlphaGrid[gr * gridCols + gc];
+          for (let y = startY; y <= endY; y += bgPitch) {
+            for (let x = startX; x <= endX; x += bgPitch) {
+              const vx = x - curX;
+              const vy = y - curY;
+              const dist = Math.hypot(vx, vy);
+              if (dist >= hotRadius) continue;
+
+              const boost = Math.pow(1 - dist / hotRadius, 1.45);
+              if (boost <= 0.14) continue;
+
+              const edgeFade = Math.min(clamp((x - 4) / 14, 0, 1), clamp((width - 4 - x) / 14, 0, 1));
+              if (edgeFade < 0.08) continue;
+
+              let bodyMask = 0;
+              if (imgReady && gridCols && gridRows) {
+                const gc = Math.round((x - px - drawX) / pitch);
+                const gr = Math.round((y - py - scrollLiftY) / pitch);
+                if (gc >= 0 && gc < gridCols && gr >= 0 && gr < gridRows) {
+                  bodyMask = pixAlphaGrid[gr * gridCols + gc];
+                }
+              }
+
+              const r = (1.1 + boost * 2.1) * edgeFade * (1 - bodyMask * 0.8) * bgScrollAlpha;
+              if (r < 0.42) continue;
+
+              const pushX = (vx / Math.max(1, dist)) * boost * 2.5;
+              const pushY = (vy / Math.max(1, dist)) * boost * 2.5;
+              hotPath.moveTo(x + pushX + r, y + pushY);
+              hotPath.arc(x + pushX, y + pushY, r, 0, Math.PI * 2);
             }
           }
-          const calmBehindBody = 1 - bodyMask * 0.8;
 
-          let boost = 0;
-          let pushX = 0;
-          let pushY = 0;
-          if (!reduced && pointerInside) {
-            const vx = x - curX;
-            const vy = y - curY;
-            const dist = Math.hypot(vx, vy);
-            if (dist < 185) {
-              boost = Math.pow(1 - dist / 185, 1.45);
-              pushX = (vx / Math.max(1, dist)) * boost * 2.5;
-              pushY = (vy / Math.max(1, dist)) * boost * 2.5;
-            }
-          }
-
-          const r = (1.1 + boost * 2.1) * edgeFade * calmBehindBody * (1 - scrollP * 0.55);
-          if (r < 0.42) continue;
-
-          const target = boost > 0.14 ? hotPath : restPath;
-          target.moveTo(x + pushX + r, y + pushY);
-          target.arc(x + pushX, y + pushY, r, 0, Math.PI * 2);
+          ctx.fillStyle = night ? 'rgba(242, 95, 76, 0.68)' : 'rgba(201, 51, 38, 0.56)';
+          ctx.fill(hotPath);
         }
       }
-
-      ctx.fillStyle = night ? 'rgba(228, 231, 236, 0.11)' : 'rgba(22, 24, 29, 0.095)';
-      ctx.fill(restPath);
-      ctx.fillStyle = night ? 'rgba(242, 95, 76, 0.68)' : 'rgba(201, 51, 38, 0.56)';
-      ctx.fill(hotPath);
     }
 
     if (!imgReady || !gridCols || !gridRows || !portraitCtx) return;
@@ -316,101 +434,11 @@ export function initHeroLens(): () => void {
     const trailGate = reduced ? 0 : introReady * scrollFade;
     const hasTrail = trailGate > 0.015 && trail.length > 0;
 
-    // 2. Render crisp, grid-locked halftone print onto portraitCanvas with organic Liquid Trail dissolve
-    portraitCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    portraitCtx.clearRect(0, 0, width, height);
-
-    const softPath = new Path2D();
-    const midPath = new Path2D();
-    const deepPath = new Path2D();
-
-    for (let row = 0; row < gridRows; row++) {
-      const ny = row / Math.max(1, gridRows - 1);
-      const oy = row * pitch + pitch * 0.5;
-      const staggerX = row & 1 ? pitch * 0.5 : 0;
-      const rowOff = row * gridCols;
-
-      for (let col = 0; col < gridCols; col++) {
-        const idx = rowOff + col;
-        const a = alphaGrid[idx];
-        const tone = toneGrid[idx];
-        if (a < 0.04 || tone < 0.05) continue;
-
-        const nx = col / Math.max(1, gridCols - 1);
-
-        // Moment 1: Clean diagonal letterpress ink-bloom sweep (dots bloom crisply in place on their grid)
-        let pressScale = 1;
-        if (introP < 0.998) {
-          const diag = (1 - nx) * 0.62 + ny * 0.38;
-          const localP = clamp((introP - diag * 0.46) / 0.54, 0, 1);
-          pressScale = 1 - Math.pow(1 - localP, 3);
-        }
-
-        // Moment 3: Clean reverse print-fade sweep on scroll (dots recede gracefully top-to-bottom in unison)
-        let scrollScale = 1;
-        if (scrollP > 0.005) {
-          const dissolveWave = clamp(1 - (scrollP * 1.45 - (1 - ny) * 0.55), 0, 1);
-          scrollScale = Math.pow(dissolveWave, 1.15);
-        }
-
-        // Every dot stays strictly on its clean architectural grid + smooth whole-portrait parallax
-        const fx = drawX + col * pitch + staggerX + parX;
-        const fy = oy + parY + scrollLiftY;
-
-        let r = Math.min(maxR, tone * maxR * a * pressScale * scrollScale);
-        if (hasTrail) {
-          let erase = 0;
-          for (let b = 0; b < trail.length; b++) {
-            const blob = trail[b];
-            const dist = Math.hypot(fx - blob.x, fy - blob.y);
-            if (dist < blob.r) {
-              const e = (1 - smoothstep(blob.r * 0.32, blob.r * 0.96, dist)) * blob.life * trailGate;
-              if (e > erase) erase = e;
-            }
-          }
-          if (erase > 0.94) continue;
-          r *= 1 - erase;
-        }
-
-        if (r < 0.42) continue;
-
-        let bucket: Path2D;
-        if (tone > 0.74) {
-          bucket = deepPath;
-        } else if (tone > 0.32) {
-          bucket = midPath;
-        } else {
-          bucket = softPath;
-        }
-
-        bucket.moveTo(fx + r, fy);
-        bucket.arc(fx, fy, r, 0, Math.PI * 2);
-      }
-    }
-
-    if (night) {
-      // 60-30-10 graphite lithograph: neutral bone-silver body + subtle Braun Signal Red outer rim
-      portraitCtx.fillStyle = 'rgba(242, 95, 76, 0.36)';
-      portraitCtx.fill(softPath);
-      portraitCtx.fillStyle = 'rgba(170, 178, 190, 0.78)';
-      portraitCtx.fill(midPath);
-      portraitCtx.fillStyle = 'rgba(228, 231, 236, 0.92)';
-      portraitCtx.fill(deepPath);
-    } else {
-      // 60-30-10 Swiss print: crisp graphite ink body + subtle Braun Signal Red edge highlight
-      portraitCtx.fillStyle = 'rgba(201, 51, 38, 0.26)';
-      portraitCtx.fill(softPath);
-      portraitCtx.fillStyle = 'rgba(58, 63, 74, 0.76)';
-      portraitCtx.fill(midPath);
-      portraitCtx.fillStyle = 'rgba(22, 24, 29, 0.92)';
-      portraitCtx.fill(deepPath);
-    }
-
-    ctx.drawImage(portraitCanvas, 0, 0, width, height);
-
-    // 3. Organic Liquid Trail Ink Brush photo reveal (overlapping fluid brush stamps)
-    if (hasTrail && photoCtx && maskCtx && photoRect.dw > 0) {
-      maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // 2. Render 0.5x Liquid Trail mask first so both portrait cutout & photo overlay stay box-free at any DPI
+    if (hasTrail && maskCtx) {
+      const maskScaleX = maskCanvas.width / width;
+      const maskScaleY = maskCanvas.height / height;
+      maskCtx.setTransform(maskScaleX, 0, 0, maskScaleY, 0, 0);
       maskCtx.clearRect(0, 0, width, height);
       maskCtx.globalCompositeOperation = 'lighter';
       for (let b = 0; b < trail.length; b++) {
@@ -427,14 +455,109 @@ export function initHeroLens(): () => void {
         maskCtx.fill();
       }
       maskCtx.globalCompositeOperation = 'source-over';
+    }
 
-      photoCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // 3. Portrait Halftone: single pre-baked blit (plus mask destination-out when Liquid Trail active — zero boxes/clips)
+    const canUseStaticPortrait = introP >= 0.998 && scrollP <= 0.005 && Boolean(basePortraitCtx);
+    if (canUseStaticPortrait && !hasTrail) {
+      ctx.drawImage(basePortraitCanvas, px, py, width, height);
+    } else if (canUseStaticPortrait && hasTrail && maskCtx) {
+      portraitCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      portraitCtx.clearRect(0, 0, width, height);
+      portraitCtx.globalCompositeOperation = 'source-over';
+      portraitCtx.drawImage(basePortraitCanvas, px, py, width, height);
+      portraitCtx.globalCompositeOperation = 'destination-out';
+      portraitCtx.drawImage(maskCanvas, 0, 0, width, height);
+      portraitCtx.globalCompositeOperation = 'source-over';
+      ctx.drawImage(portraitCanvas, 0, 0, width, height);
+    } else {
+      portraitCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      portraitCtx.clearRect(0, 0, width, height);
+
+      const softPath = new Path2D();
+      const midPath = new Path2D();
+      const deepPath = new Path2D();
+
+      for (let row = 0; row < gridRows; row++) {
+        const ny = row / Math.max(1, gridRows - 1);
+        const oy = row * pitch + pitch * 0.5;
+        const staggerX = row & 1 ? pitch * 0.5 : 0;
+        const rowOff = row * gridCols;
+
+        let scrollScale = 1;
+        if (scrollP > 0.005) {
+          const dissolveWave = clamp(1 - (scrollP * 1.45 - (1 - ny) * 0.55), 0, 1);
+          scrollScale = Math.pow(dissolveWave, 1.15);
+        }
+
+        for (let col = 0; col < gridCols; col++) {
+          const idx = rowOff + col;
+          const a = alphaGrid[idx];
+          const tone = toneGrid[idx];
+          if (a < 0.04 || tone < 0.05) continue;
+
+          let pressScale = 1;
+          if (introP < 0.998) {
+            const nx = col / Math.max(1, gridCols - 1);
+            const diag = (1 - nx) * 0.62 + ny * 0.38;
+            const localP = clamp((introP - diag * 0.46) / 0.54, 0, 1);
+            pressScale = 1 - Math.pow(1 - localP, 3);
+          }
+
+          const fx = drawX + col * pitch + staggerX + px;
+          const fy = oy + py + scrollLiftY;
+
+          let r = Math.min(maxR, tone * maxR * a * pressScale * scrollScale);
+          if (hasTrail) {
+            let erase = 0;
+            for (let b = 0; b < trail.length; b++) {
+              const blob = trail[b];
+              const dist = Math.hypot(fx - blob.x, fy - blob.y);
+              if (dist < blob.r) {
+                const e = (1 - smoothstep(blob.r * 0.32, blob.r * 0.96, dist)) * blob.life * trailGate;
+                if (e > erase) erase = e;
+              }
+            }
+            if (erase > 0.94) continue;
+            r *= 1 - erase;
+          }
+
+          if (r < 0.42) continue;
+
+          const bucket = tone > 0.74 ? deepPath : tone > 0.32 ? midPath : softPath;
+          bucket.moveTo(fx + r, fy);
+          bucket.arc(fx, fy, r, 0, Math.PI * 2);
+        }
+      }
+
+      if (night) {
+        portraitCtx.fillStyle = 'rgba(242, 95, 76, 0.36)';
+        portraitCtx.fill(softPath);
+        portraitCtx.fillStyle = 'rgba(170, 178, 190, 0.78)';
+        portraitCtx.fill(midPath);
+        portraitCtx.fillStyle = 'rgba(228, 231, 236, 0.92)';
+        portraitCtx.fill(deepPath);
+      } else {
+        portraitCtx.fillStyle = 'rgba(201, 51, 38, 0.26)';
+        portraitCtx.fill(softPath);
+        portraitCtx.fillStyle = 'rgba(58, 63, 74, 0.76)';
+        portraitCtx.fill(midPath);
+        portraitCtx.fillStyle = 'rgba(22, 24, 29, 0.92)';
+        portraitCtx.fill(deepPath);
+      }
+
+      ctx.drawImage(portraitCanvas, 0, 0, width, height);
+    }
+
+    // 4. Organic Liquid Trail photo reveal composited cleanly at 1x resolution (no rectangular clip box)
+    if (hasTrail && photoCtx && maskCtx && photoRect.dw > 0) {
+      photoCtx.setTransform(1, 0, 0, 1, 0, 0);
       photoCtx.clearRect(0, 0, width, height);
       photoCtx.globalCompositeOperation = 'source-over';
       photoCtx.drawImage(
         img,
-        drawX + photoRect.ox + parX,
-        photoRect.oy + parY + scrollLiftY,
+        drawX + photoRect.ox + px,
+        photoRect.oy + py + scrollLiftY,
         photoRect.dw,
         photoRect.dh
       );
@@ -457,9 +580,7 @@ export function initHeroLens(): () => void {
         vEdgeGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
         vEdgeGrad.addColorStop(0.06, 'rgba(0, 0, 0, 0)');
         vEdgeGrad.addColorStop(0.2, 'rgba(0, 0, 0, 1)');
-        vEdgeGrad.addColorStop(0.83, 'rgba(0, 0, 0, 1)');
-        vEdgeGrad.addColorStop(0.99, 'rgba(0, 0, 0, 0)');
-        vEdgeGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        vEdgeGrad.addColorStop(1, 'rgba(0, 0, 0, 1)');
       } else {
         vEdgeGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
         vEdgeGrad.addColorStop(0.12, 'rgba(0, 0, 0, 1)');
@@ -501,10 +622,15 @@ export function initHeroLens(): () => void {
 
     portraitCanvas.width = canvas.width;
     portraitCanvas.height = canvas.height;
-    photoCanvas.width = canvas.width;
-    photoCanvas.height = canvas.height;
-    maskCanvas.width = canvas.width;
-    maskCanvas.height = canvas.height;
+    baseBgCanvas.width = canvas.width;
+    baseBgCanvas.height = canvas.height;
+    basePortraitCanvas.width = canvas.width;
+    basePortraitCanvas.height = canvas.height;
+    photoCanvas.width = width;
+    photoCanvas.height = height;
+    maskCanvas.width = Math.max(1, Math.ceil(width * 0.5));
+    maskCanvas.height = Math.max(1, Math.ceil(height * 0.5));
+    staticLayersDirty = true;
 
     if (!pointerInside) {
       curX = isDesktop ? pX + pW * 0.52 : width * 0.5;
@@ -528,17 +654,27 @@ export function initHeroLens(): () => void {
     return false;
   };
 
-  const tick = () => {
+  const tick = (now: number) => {
     if (killed || !visible) {
       rafId = 0;
+      lastTickTime = 0;
       return;
     }
 
-    curX += (targetX - curX) * 0.17;
-    curY += (targetY - curY) * 0.17;
-    lightAlpha += (targetLightAlpha - lightAlpha) * 0.13;
-    parX += (targetParX - parX) * 0.10;
-    parY += (targetParY - parY) * 0.10;
+    const dt = lastTickTime ? clamp((now - lastTickTime) / 1000, 0.004, 0.05) : 1 / 60;
+    lastTickTime = now;
+
+    const curEase = 1 - Math.exp(-dt * 11);
+    const lightEase = 1 - Math.exp(-dt * 8.5);
+    const parEase = 1 - Math.exp(-dt * 6.5);
+    const headEase = 1 - Math.exp(-dt * 12);
+    const trailDecay = Math.exp(-dt * 2.4);
+
+    curX += (targetX - curX) * curEase;
+    curY += (targetY - curY) * curEase;
+    lightAlpha += (targetLightAlpha - lightAlpha) * lightEase;
+    parX += (targetParX - parX) * parEase;
+    parY += (targetParY - parY) * parEase;
 
     if (trail.length > 0) {
       const keepHead = targetLightAlpha > 0.5 || state.touchAlpha > 0.2;
@@ -546,9 +682,9 @@ export function initHeroLens(): () => void {
         if (i === 0 && keepHead) {
           trail[i].x = curX;
           trail[i].y = curY;
-          trail[i].life += (1 - trail[i].life) * 0.2;
+          trail[i].life += (1 - trail[i].life) * headEase;
         } else {
-          trail[i].life *= 0.935;
+          trail[i].life *= trailDecay;
           if (trail[i].life < 0.02) {
             trail.splice(i, 1);
           }
@@ -562,6 +698,7 @@ export function initHeroLens(): () => void {
       rafId = window.requestAnimationFrame(tick);
     } else {
       rafId = 0;
+      lastTickTime = 0;
     }
   };
 
@@ -572,6 +709,7 @@ export function initHeroLens(): () => void {
       return;
     }
     if (!rafId) {
+      lastTickTime = 0;
       rafId = window.requestAnimationFrame(tick);
     }
   };
@@ -836,9 +974,9 @@ export function initHeroLens(): () => void {
 
     if (near) {
       const head = trail[0];
-      if (!head || Math.hypot(x - head.x, y - head.y) > 16) {
-        trail.unshift({ x, y, life: 0.95, r: 78 });
-        if (trail.length > 10) trail.pop();
+      if (!head || Math.hypot(x - head.x, y - head.y) > 14) {
+        trail.unshift({ x, y, life: 0.95, r: 84 });
+        if (trail.length > 14) trail.pop();
       }
     }
 
@@ -872,8 +1010,8 @@ export function initHeroLens(): () => void {
 
     const head = trail[0];
     if (!head || Math.hypot(x - head.x, y - head.y) > 14) {
-      trail.unshift({ x, y, life: 0.95, r: 62 });
-      if (trail.length > 8) trail.pop();
+      trail.unshift({ x, y, life: 0.95, r: 66 });
+      if (trail.length > 10) trail.pop();
     }
 
     if (state.touchAlpha < 0.99 && (!touchTween || !touchTween.isActive())) {
@@ -910,6 +1048,14 @@ export function initHeroLens(): () => void {
     canvasWrap.addEventListener('pointercancel', onTouchEnd, { passive: true });
   }
 
+  const scheduleScrollDraw = () => {
+    if (killed || !visible || scrollRaf) return;
+    scrollRaf = window.requestAnimationFrame(() => {
+      scrollRaf = 0;
+      draw();
+    });
+  };
+
   // Moment 3: Viewport-aware scrubbed scroll dissolve via gsap.matchMedia()
   const mm = gsap.matchMedia();
   if (!reduced) {
@@ -927,7 +1073,7 @@ export function initHeroLens(): () => void {
               opacity: clamp(1 - self.progress * 0.72, 0.25, 1),
             });
           }
-          draw();
+          scheduleScrollDraw();
         },
       });
       return () => {
@@ -945,7 +1091,7 @@ export function initHeroLens(): () => void {
         scrub: true,
         onUpdate: (self) => {
           state.scrollProgress = self.progress;
-          draw();
+          scheduleScrollDraw();
         },
       });
       return () => {
@@ -978,6 +1124,7 @@ export function initHeroLens(): () => void {
               } else if (rafId) {
                 window.cancelAnimationFrame(rafId);
                 rafId = 0;
+                lastTickTime = 0;
               }
             });
           },
@@ -987,6 +1134,7 @@ export function initHeroLens(): () => void {
   io?.observe(hero);
 
   const mo = new MutationObserver(() => {
+    staticLayersDirty = true;
     draw();
   });
   mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
@@ -1021,8 +1169,11 @@ export function initHeroLens(): () => void {
     img.onload = null;
     if (rafId) window.cancelAnimationFrame(rafId);
     if (resizeRaf) window.cancelAnimationFrame(resizeRaf);
+    if (scrollRaf) window.cancelAnimationFrame(scrollRaf);
     rafId = 0;
     resizeRaf = 0;
+    scrollRaf = 0;
+    lastTickTime = 0;
     introTl?.kill();
     touchTween?.kill();
     mm.revert();

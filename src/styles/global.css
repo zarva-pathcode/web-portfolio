@@ -1108,17 +1108,16 @@ html.lenis body {
 
 .js [data-reveal='ink'] {
   opacity: 0;
-  filter: blur(7px);
-  transform: none;
+  transform: translateY(10px);
   transition:
-    opacity 700ms var(--ease-enter),
-    filter 700ms var(--ease-enter);
+    opacity 650ms var(--ease-enter),
+    transform 650ms var(--ease-enter);
   transition-delay: var(--reveal-delay, 0ms);
 }
 
 .js [data-reveal='ink'].is-in {
   opacity: 1;
-  filter: blur(0);
+  transform: none;
 }
 
 /* Word masks for split headlines. */
@@ -1134,7 +1133,6 @@ html.lenis body {
   transform: translateY(112%);
   transition: transform 780ms var(--ease-enter);
   transition-delay: calc(var(--i, 0) * 42ms);
-  will-change: transform;
 }
 
 [data-split].is-in .word-inner {
