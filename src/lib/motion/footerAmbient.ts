@@ -9,9 +9,9 @@ interface Spark {
   maxLife: number;
 }
 
-// Three tone buckets per theme: cool tips -> body -> core.
-const PAPER_TONES = ['rgba(61, 90, 115, 0.24)', 'rgba(61, 90, 115, 0.46)', 'rgba(47, 72, 94, 0.72)'];
-const NIGHT_TONES = ['rgba(96, 132, 162, 0.42)', 'rgba(134, 170, 198, 0.72)', 'rgba(196, 218, 236, 0.90)'];
+// Three tone buckets per theme (60-30-10 Braun Signal Red accent): tips -> body -> core.
+const PAPER_TONES = ['rgba(201, 51, 38, 0.22)', 'rgba(201, 51, 38, 0.44)', 'rgba(168, 38, 27, 0.72)'];
+const NIGHT_TONES = ['rgba(201, 51, 38, 0.40)', 'rgba(242, 95, 76, 0.70)', 'rgba(255, 138, 120, 0.90)'];
 
 const PITCH = 7; // halftone dot spacing in CSS px
 const MAX_R = PITCH * 0.52; // hottest dots just kiss their neighbours

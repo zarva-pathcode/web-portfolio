@@ -76,6 +76,8 @@ export function initHeroLens(): () => void {
   const sampleCtx = sampleCanvas.getContext('2d', { willReadFrequently: true });
   const portraitCanvas = document.createElement('canvas');
   const portraitCtx = portraitCanvas.getContext('2d');
+  const photoCanvas = document.createElement('canvas');
+  const photoCtx = photoCanvas.getContext('2d');
 
   const img = new Image();
   img.decoding = 'async';
@@ -93,6 +95,7 @@ export function initHeroLens(): () => void {
   let gridRows = 0;
   let toneGrid = new Float32Array(0);
   let alphaGrid = new Float32Array(0);
+  let photoRect = { ox: 0, oy: 0, dw: 0, dh: 0 };
 
   // Interactive motion state
   const state = {
@@ -141,6 +144,7 @@ export function initHeroLens(): () => void {
     const dh = img.naturalHeight * scale;
     const ox = isDesktop ? (drawW - dw) * 0.54 : (width - dw) * 0.5;
     const oy = isDesktop ? (height - dh) * 0.24 : (height - dh) * 0.16;
+    photoRect = { ox, oy, dw, dh };
 
     sampleCtx.drawImage(img, ox / pitch, oy / pitch, dw / pitch, dh / pitch);
 
@@ -224,7 +228,7 @@ export function initHeroLens(): () => void {
 
       ctx.fillStyle = night ? 'rgba(228, 231, 236, 0.085)' : 'rgba(22, 24, 29, 0.08)';
       ctx.fill(restPath);
-      ctx.fillStyle = night ? 'rgba(127, 162, 190, 0.52)' : 'rgba(61, 90, 115, 0.44)';
+      ctx.fillStyle = night ? 'rgba(242, 95, 76, 0.58)' : 'rgba(201, 51, 38, 0.48)';
       ctx.fill(hotPath);
     }
 
@@ -295,44 +299,117 @@ export function initHeroLens(): () => void {
     }
 
     if (night) {
-      // Soft misty steel & cool silver halftone tones on graphite ground
-      portraitCtx.fillStyle = 'rgba(92, 128, 158, 0.46)';
+      // 60-30-10 graphite lithograph: neutral bone-silver body + subtle Braun Signal Red outer rim
+      portraitCtx.fillStyle = 'rgba(242, 95, 76, 0.36)';
       portraitCtx.fill(softPath);
-      portraitCtx.fillStyle = 'rgba(138, 174, 202, 0.80)';
+      portraitCtx.fillStyle = 'rgba(170, 178, 190, 0.78)';
       portraitCtx.fill(midPath);
-      portraitCtx.fillStyle = 'rgba(226, 233, 240, 0.90)';
+      portraitCtx.fillStyle = 'rgba(228, 231, 236, 0.92)';
       portraitCtx.fill(deepPath);
     } else {
-      // Refined mineral slate-blue & graphite ink print tones
-      portraitCtx.fillStyle = 'rgba(61, 90, 115, 0.30)';
+      // 60-30-10 Swiss print: crisp graphite ink body + subtle Braun Signal Red edge highlight
+      portraitCtx.fillStyle = 'rgba(201, 51, 38, 0.26)';
       portraitCtx.fill(softPath);
-      portraitCtx.fillStyle = 'rgba(54, 79, 102, 0.72)';
+      portraitCtx.fillStyle = 'rgba(58, 63, 74, 0.76)';
       portraitCtx.fill(midPath);
-      portraitCtx.fillStyle = 'rgba(26, 34, 44, 0.90)';
+      portraitCtx.fillStyle = 'rgba(22, 24, 29, 0.92)';
       portraitCtx.fill(deepPath);
     }
 
+    const introReady = clamp((introP - 0.55) / 0.45, 0, 1);
+    const scrollFade = clamp(1 - scrollP * 1.35, 0, 1);
+    const reveal = activeLight * introReady * scrollFade;
+
     // Moment 2: Gallery Studio Light Wash (`source-atop` illuminates ONLY the crisp halftone dots)
-    if (activeLight > 0.015) {
+    if (reveal > 0.015) {
       const lightR = isDesktop ? 245 : 155;
       portraitCtx.save();
       portraitCtx.globalCompositeOperation = 'source-atop';
       const grad = portraitCtx.createRadialGradient(curX, curY, 0, curX, curY, lightR);
       if (night) {
-        grad.addColorStop(0, `rgba(214, 232, 248, ${(0.52 * activeLight).toFixed(3)})`);
-        grad.addColorStop(0.45, `rgba(142, 182, 214, ${(0.28 * activeLight).toFixed(3)})`);
-        grad.addColorStop(1, 'rgba(142, 182, 214, 0)');
+        grad.addColorStop(0, `rgba(255, 138, 120, ${(0.58 * reveal).toFixed(3)})`);
+        grad.addColorStop(0.45, `rgba(242, 95, 76, ${(0.30 * reveal).toFixed(3)})`);
+        grad.addColorStop(1, 'rgba(242, 95, 76, 0)');
       } else {
-        grad.addColorStop(0, `rgba(110, 154, 190, ${(0.56 * activeLight).toFixed(3)})`);
-        grad.addColorStop(0.48, `rgba(74, 112, 144, ${(0.24 * activeLight).toFixed(3)})`);
-        grad.addColorStop(1, 'rgba(74, 112, 144, 0)');
+        grad.addColorStop(0, `rgba(218, 62, 46, ${(0.56 * reveal).toFixed(3)})`);
+        grad.addColorStop(0.48, `rgba(201, 51, 38, ${(0.24 * reveal).toFixed(3)})`);
+        grad.addColorStop(1, 'rgba(201, 51, 38, 0)');
       }
       portraitCtx.fillStyle = grad;
       portraitCtx.fillRect(0, 0, width, height);
       portraitCtx.restore();
     }
 
+    const showPhotoLens = reveal > 0.015 && Boolean(photoCtx) && photoRect.dw > 0;
+    const baseLensR = isDesktop ? 155 : 108;
+    const lensR = baseLensR * (0.72 + 0.28 * reveal);
+
+    if (showPhotoLens && photoCtx) {
+      // Melt halftone dots smoothly inside the optical lens
+      portraitCtx.save();
+      portraitCtx.globalCompositeOperation = 'destination-out';
+      const holeGrad = portraitCtx.createRadialGradient(curX, curY, 0, curX, curY, lensR);
+      holeGrad.addColorStop(0, `rgba(0, 0, 0, ${reveal.toFixed(3)})`);
+      holeGrad.addColorStop(0.72, `rgba(0, 0, 0, ${reveal.toFixed(3)})`);
+      holeGrad.addColorStop(0.92, `rgba(0, 0, 0, ${(0.45 * reveal).toFixed(3)})`);
+      holeGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      portraitCtx.fillStyle = holeGrad;
+      portraitCtx.fillRect(0, 0, width, height);
+      portraitCtx.restore();
+
+      // Draw pixel-aligned original photo onto photoCanvas with feathered circular mask
+      photoCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      photoCtx.clearRect(0, 0, width, height);
+      photoCtx.globalCompositeOperation = 'source-over';
+      photoCtx.drawImage(
+        img,
+        drawX + photoRect.ox + parX,
+        photoRect.oy + parY + scrollLiftY,
+        photoRect.dw,
+        photoRect.dh
+      );
+
+      photoCtx.globalCompositeOperation = 'destination-in';
+      const lensGrad = photoCtx.createRadialGradient(curX, curY, 0, curX, curY, lensR);
+      lensGrad.addColorStop(0, `rgba(0, 0, 0, ${reveal.toFixed(3)})`);
+      lensGrad.addColorStop(0.74, `rgba(0, 0, 0, ${reveal.toFixed(3)})`);
+      lensGrad.addColorStop(0.92, `rgba(0, 0, 0, ${(0.45 * reveal).toFixed(3)})`);
+      lensGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      photoCtx.fillStyle = lensGrad;
+      photoCtx.fillRect(0, 0, width, height);
+
+      if (isDesktop) {
+        const edgeGrad = photoCtx.createLinearGradient(pX, 0, width, 0);
+        edgeGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        edgeGrad.addColorStop(0.08, 'rgba(0, 0, 0, 1)');
+        edgeGrad.addColorStop(0.93, 'rgba(0, 0, 0, 1)');
+        edgeGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        photoCtx.fillStyle = edgeGrad;
+        photoCtx.fillRect(0, 0, width, height);
+      }
+      photoCtx.globalCompositeOperation = 'source-over';
+    }
+
     ctx.drawImage(portraitCanvas, 0, 0, width, height);
+
+    if (showPhotoLens && photoCtx) {
+      ctx.drawImage(photoCanvas, 0, 0, width, height);
+
+      ctx.save();
+      if (isDesktop) {
+        ctx.beginPath();
+        ctx.rect(pX + 4, 0, pW - 6, height);
+        ctx.clip();
+      }
+      ctx.beginPath();
+      ctx.arc(curX, curY, lensR * 0.9, 0, Math.PI * 2);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = night
+        ? `rgba(242, 95, 76, ${(0.52 * reveal).toFixed(3)})`
+        : `rgba(201, 51, 38, ${(0.44 * reveal).toFixed(3)})`;
+      ctx.stroke();
+      ctx.restore();
+    }
   };
 
   const resize = () => {
@@ -360,6 +437,8 @@ export function initHeroLens(): () => void {
 
     portraitCanvas.width = canvas.width;
     portraitCanvas.height = canvas.height;
+    photoCanvas.width = canvas.width;
+    photoCanvas.height = canvas.height;
 
     if (!pointerInside) {
       curX = isDesktop ? pX + pW * 0.52 : width * 0.5;
@@ -664,10 +743,14 @@ export function initHeroLens(): () => void {
     targetX = x;
     targetY = y;
 
-    const overPortrait = x >= pX - 30 && x <= width + 20 && y >= -10 && y <= height + 10;
+    const overPortrait =
+      x >= pX + pW * 0.06 &&
+      x <= width - 8 &&
+      y >= height * 0.03 &&
+      y <= height * 0.97;
     targetLightAlpha = overPortrait ? 1 : 0;
 
-    if (overPortrait && x >= pX + 20 && !hintDismissed) {
+    if (overPortrait && !hintDismissed) {
       hintDismissed = true;
       lensHint?.setAttribute('data-dismissed', 'true');
     }
