@@ -1,7 +1,7 @@
 ---
 import { getImage } from 'astro:assets';
 import { localePath, type Locale } from '../i18n';
-import heroPhoto from '../assets/bg-image.jpg';
+import heroPhoto from '../assets/bg-image-cutout.png';
 import { getDefaultSection } from '../lib/cms/defaults';
 import type { HeroSectionData, SettingsSectionData } from '../lib/cms/validators';
 import Ticker from './Ticker.astro';
@@ -25,7 +25,7 @@ const portraitSrc = hero.portraitUrl
         src: heroPhoto,
         format: 'webp',
         width: 1400,
-        quality: 86,
+        quality: 90,
       })
     ).src;
 ---

@@ -155,6 +155,19 @@ export function initHeroLens(): () => void {
       alphaGrid = new Float32Array(total);
     }
 
+    let borderTotal = 0;
+    let borderTransparent = 0;
+    for (let col = 0; col < gridCols; col++) {
+      borderTotal++;
+      if (pixels[col * 4 + 3] < 245) borderTransparent++;
+    }
+    for (let row = 0; row < gridRows; row++) {
+      borderTotal += 2;
+      if (pixels[row * gridCols * 4 + 3] < 245) borderTransparent++;
+      if (pixels[(row * gridCols + gridCols - 1) * 4 + 3] < 245) borderTransparent++;
+    }
+    const hasNativeAlpha = borderTransparent / Math.max(1, borderTotal) >= 0.15;
+
     for (let row = 0; row < gridRows; row++) {
       const ny = row / Math.max(1, gridRows - 1);
       // Clean top & bottom edge fade only (zero circular/oval mask)
@@ -177,13 +190,20 @@ export function initHeroLens(): () => void {
         const bCh = pixels[o + 2] / 255;
         const lum = 0.299 * rCh + 0.587 * gCh + 0.114 * bCh;
 
-        // Chrominance-based studio backdrop removal (isolates natural head/shoulders silhouette cleanly)
-        const blueExcess = Math.max(0, bCh - rCh * 1.04);
-        const cyanSuppress = clamp(1 - (blueExcess - 0.025) / 0.085, 0, 1);
+        if (hasNativeAlpha) {
+          const pixA = pixels[o + 3] / 255;
+          const darkness = clamp((0.86 - lum) / 0.82, 0, 1);
+          toneGrid[idx] = Math.pow(darkness, 1.2) * pixA;
+          alphaGrid[idx] = hFade * vFade * pixA;
+        } else {
+          // Chrominance fallback for opaque portrait uploads without alpha transparency
+          const blueExcess = Math.max(0, bCh - rCh * 1.04);
+          const cyanSuppress = clamp(1 - (blueExcess - 0.025) / 0.085, 0, 1);
 
-        const darkness = clamp((0.82 - lum) / 0.78, 0, 1);
-        toneGrid[idx] = Math.pow(darkness, 1.24) * cyanSuppress;
-        alphaGrid[idx] = hFade * vFade;
+          const darkness = clamp((0.82 - lum) / 0.78, 0, 1);
+          toneGrid[idx] = Math.pow(darkness, 1.24) * cyanSuppress;
+          alphaGrid[idx] = hFade * vFade;
+        }
       }
     }
   };
@@ -357,7 +377,7 @@ export function initHeroLens(): () => void {
       portraitCtx.fillRect(0, 0, width, height);
       portraitCtx.restore();
 
-      // Draw pixel-aligned original photo onto photoCanvas with feathered circular mask
+      // Draw pixel-aligned alpha-transparent portrait onto photoCanvas with feathered circular mask
       photoCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
       photoCtx.clearRect(0, 0, width, height);
       photoCtx.globalCompositeOperation = 'source-over';
@@ -387,6 +407,24 @@ export function initHeroLens(): () => void {
         photoCtx.fillStyle = edgeGrad;
         photoCtx.fillRect(0, 0, width, height);
       }
+
+      const vEdgeGrad = photoCtx.createLinearGradient(0, 0, 0, height);
+      if (isDesktop) {
+        vEdgeGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        vEdgeGrad.addColorStop(0.06, 'rgba(0, 0, 0, 0)');
+        vEdgeGrad.addColorStop(0.2, 'rgba(0, 0, 0, 1)');
+        vEdgeGrad.addColorStop(0.83, 'rgba(0, 0, 0, 1)');
+        vEdgeGrad.addColorStop(0.99, 'rgba(0, 0, 0, 0)');
+        vEdgeGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      } else {
+        vEdgeGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        vEdgeGrad.addColorStop(0.12, 'rgba(0, 0, 0, 1)');
+        vEdgeGrad.addColorStop(0.82, 'rgba(0, 0, 0, 1)');
+        vEdgeGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      }
+      photoCtx.fillStyle = vEdgeGrad;
+      photoCtx.fillRect(0, 0, width, height);
+
       photoCtx.globalCompositeOperation = 'source-over';
     }
 
@@ -405,8 +443,8 @@ export function initHeroLens(): () => void {
       ctx.arc(curX, curY, lensR * 0.9, 0, Math.PI * 2);
       ctx.lineWidth = 1;
       ctx.strokeStyle = night
-        ? `rgba(242, 95, 76, ${(0.52 * reveal).toFixed(3)})`
-        : `rgba(201, 51, 38, ${(0.44 * reveal).toFixed(3)})`;
+        ? `rgba(242, 95, 76, ${(0.36 * reveal).toFixed(3)})`
+        : `rgba(201, 51, 38, ${(0.30 * reveal).toFixed(3)})`;
       ctx.stroke();
       ctx.restore();
     }
